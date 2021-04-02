@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UI", "UI\UI.csproj", "{FB9B90BB-69B1-45C0-BC5F-44FF4ECE9360}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HamsterParadise.DataAccess", "HamsterParadise.DataAccess\HamsterParadise.DataAccess.csproj", "{0B5C17B5-9FF3-4D15-BBE5-0AFE9018559D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HamsterParadise.Common", "HamsterParadise.Common\HamsterParadise.Common.csproj", "{A3835F2C-5D88-44A2-AD44-F6CAF7932C00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InitializeData", "InitializeData", "{1044A286-5498-40B9-B8BC-5AF62C38BC46}"
+	ProjectSection(SolutionItems) = preProject
+		Hamsterlista30.csv = Hamsterlista30.csv
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB9B90BB-69B1-45C0-BC5F-44FF4ECE9360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB9B90BB-69B1-45C0-BC5F-44FF4ECE9360}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB9B90BB-69B1-45C0-BC5F-44FF4ECE9360}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB9B90BB-69B1-45C0-BC5F-44FF4ECE9360}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B5C17B5-9FF3-4D15-BBE5-0AFE9018559D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B5C17B5-9FF3-4D15-BBE5-0AFE9018559D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B5C17B5-9FF3-4D15-BBE5-0AFE9018559D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B5C17B5-9FF3-4D15-BBE5-0AFE9018559D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3835F2C-5D88-44A2-AD44-F6CAF7932C00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3835F2C-5D88-44A2-AD44-F6CAF7932C00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3835F2C-5D88-44A2-AD44-F6CAF7932C00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3835F2C-5D88-44A2-AD44-F6CAF7932C00}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {639D8A0E-897E-466F-8C9D-DDCB85D0B81D}
+	EndGlobalSection
+EndGlobal
