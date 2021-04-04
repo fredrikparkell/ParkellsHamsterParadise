@@ -1,6 +1,7 @@
 ﻿using HamsterParadise.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,13 +23,14 @@ namespace HamsterParadise.Common
         public CareHouseSimulation(int tickSpeed, int daysToRun) 
         {
             CheckIsDatabaseCreated();
+            var taskNullify = NullifyHamsters();
 
             elapsedTicks = 0;
             tickTotalRunTime = daysToRun * 100; // tex 3 * 100 = 300 ticks totalt
             currentSimulationDate = new DateTime(2021, 4, 01, 7, 0, 0);
 
-            var taskOne = CreateAddSimulation();
-            var taskTwo = MoveToCages();
+            var taskCreateSim = CreateAddSimulation();
+            var taskInitialMove = MoveToCages();
 
 
             timeTicker = new TimeTicker(1000/tickSpeed); // sets time of the ticker to 1000 ms (1 second)
@@ -75,7 +77,6 @@ namespace HamsterParadise.Common
 
 
 
-
         private async Task CreateAddSimulation()
         {
             await Task.Run(() =>
@@ -101,6 +102,52 @@ namespace HamsterParadise.Common
                 }
             });
         }
+
+
+
+        private async Task NullifyHamsters()
+        {
+            var nullHamsterTask = NullHamster();
+            var nullCageCageSize = NullCageSize(new Cage());
+            var nullExerciseAreaCageSize = NullCageSize(new ExerciseArea());
+
+            var taskArray = new Task[] { nullHamsterTask, nullCageCageSize, nullExerciseAreaCageSize };
+            await Task.WhenAll(taskArray);
+        }
+        private async Task NullHamster()
+        {
+            await Task.Run(() =>
+            {
+                using (HamsterDbContext hamsterDb = new HamsterDbContext())
+                {
+                    var hamsters = hamsterDb.Hamsters.Select(h => h).ToList();
+
+                    for (int i = 0; i < hamsters.Count; i++)
+                    {
+                        hamsters[i].CageId = null;
+                        hamsters[i].ExerciseAreaId = null;
+                        hamsters[i].CheckedInTime = null;
+                        hamsters[i].LastExerciseTime = null;
+                    }
+                    hamsterDb.SaveChanges();
+                }
+            });
+        } // this is for when for example the simulation was ended prematurely
+        private async Task NullCageSize(object cageType)
+        {
+            await Task.Run(() =>
+            {
+                using (HamsterDbContext hamsterDb = new HamsterDbContext())
+                {
+                    
+                }
+            });
+        } // this is for when for example the simulation was ended prematurely
+
+
+
+
+
 
         private void CheckIsDatabaseCreated()
         {
