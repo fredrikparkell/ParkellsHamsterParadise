@@ -6,7 +6,22 @@ using System.Threading.Tasks;
 
 namespace UI
 {
-    class UserInput
+    public class UserInput
     {
+        private static UserPrint userPrint = new UserPrint();
+
+
+        public int DaysToSim()
+        {
+
+
+            return 0;
+        }
+        public int TicksPerSecond()
+        {
+
+
+            return 0;
+        }
     }
 }
