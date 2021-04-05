@@ -9,11 +9,6 @@ namespace HamsterParadise.Common
 {
     public class TickInfoEventArgs
     {
-        // Kunna visa:
-        // -Datumet/tiden/ticket/dag
-        // -Vilka hamstrar i vilka burar + ExerciseArea
-        // -Alla ActivityLogs som reggats detta tick
-
         public int ElapsedTicks { get; }
         public int ElapsedDays { get; }
         public int CurrentSimulationId { get; }

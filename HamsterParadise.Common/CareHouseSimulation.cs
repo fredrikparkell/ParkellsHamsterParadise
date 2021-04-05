@@ -24,13 +24,14 @@ namespace HamsterParadise.Common
         private int currentSimulationId;
         private DateTime currentSimulationDate;
         private TimeTicker timeTicker;
+        public void ManipulateTimer()
+        {
+            timeTicker.ManipulateTimer();
+        }
 
         public CareHouseSimulation(int tickSpeed, int daysToRun) 
         {
             CheckIsDatabaseCreated();
-            //Console.WriteLine("made it this far");
-            //Console.ReadKey();
-            //Console.ReadKey();
 
             var taskNullify = NullifyHamsters();
             var taskCreateNewSim = CreateAddSimulation();
@@ -68,11 +69,7 @@ namespace HamsterParadise.Common
             }
             else
             {
-                // kolla olika saker, do stuff, every 6th minute-check
-                // flytta till och från motion osv
-                MoveToExerciseArea();
-                MoveToCages();
-
+                await MoveToExerciseArea(); // kolla olika saker, do stuff, every 6th minute-check. flytta till och från motion osv
                 OnSendTickInfo();
             }
         }
@@ -188,51 +185,102 @@ namespace HamsterParadise.Common
                 await Task.WhenAll(taskArray);
             }
         } // typ klar?
-
-
-
-
-        private async Task MoveToCages()
-        {
-            await Task.Run(() =>
-            {
-                using (HamsterDbContext hamsterDb = new HamsterDbContext())
-                {
-                    var hamstersWithNoCage = hamsterDb.Hamsters.Where(c => c.CageId == null && c.ExerciseAreaId == null).ToList();
-
-                    for (int i = 0; i < hamstersWithNoCage.Count(); i++)
-                    {
-                        TimeSpan timeSpan = currentSimulationDate-hamstersWithNoCage[i].ActivityLogs.Where(a => 
-                                                            a.Activity.ActivityName == "Exercise" && a.SimulationId == currentSimulationId)
-                                                            .Select(a => a.TimeStamp).Single();
-                        if (timeSpan.TotalMinutes > 60)
-                        {
-                            var exerciseArea = hamsterDb.ExerciseAreas.Where(e => e.Id == hamstersWithNoCage[i].ExerciseAreaId).Single();
-                            hamstersWithNoCage[i].ExerciseAreaId = null;
-                            exerciseArea.CageSize--;
-                        }
-
-
-
-                        hamstersWithNoCage[i].CageId = hamsterDb.Cages.Where(c => c.CageSize != 3 &&
-                                                        c.Hamsters.FirstOrDefault().IsFemale == hamstersWithNoCage[i].IsFemale)
-                                                        .Select(c => c.Id).First();
-                        if (hamstersWithNoCage[i].CheckedInTime == null)
-                        {
-                            var addActivityLogTask = CreateAddActivityLog(hamsterDb.Activities.Where(a => a.ActivityName == "Arrived")
-                                                .Select(a => a.Id).Single(), hamstersWithNoCage[i].Id);
-                        }
-                    }
-                }
-            });
-        }
         private async Task MoveToExerciseArea()
         {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var exerciseArea = hamsterDb.ExerciseAreas.First();
+                var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
+                                .Select(a => a.Id).Single();
+
+                var taskList = new List<Task>();
+
+                if (exerciseArea.CageSize != 0)
+                {
+                    var hamstersInExerciseArea = hamsterDb.Hamsters.Where(h => h.ExerciseAreaId != null).ToList();
+
+                    for (int i = 0; i < hamstersInExerciseArea.Count(); i++)
+                    {
+                        var checkTimeTask = TryRemoveFromExerciseArea(hamstersInExerciseArea[i], exerciseArea, activityId);
+                        taskList.Add(checkTimeTask);
+                    }
+
+                    await Task.WhenAll(taskList);
+                    hamsterDb.SaveChanges();
+
+                    await TryAddToExerciseArea(exerciseArea);
+                }
+                else
+                {
+                    await TryAddToExerciseArea(exerciseArea); // lägga till 3-6 stycken hamstrar av samma kön
+                }
+            }
+        }
+        private async Task TryAddToExerciseArea(ExerciseArea exerciseArea)
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Exercise")
+                            .Select(a => a.Id).Single();
+
+                var hamstersNotInExerciseArea = hamsterDb.Hamsters.Where(c => c.ExerciseAreaId == null)
+                                                    .OrderBy(t => t.LastExerciseTime)
+                                                    .ThenBy(t => t.LastExerciseTime.HasValue)
+                                                    .Select(c => c).ToList();
+
+                var hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
+                                                             .Take(6).ToList();
+
+                var taskList = new List<Task>();
+
+                for (int i = 0; i < hamstersToAdd.Count(); i++)
+                {
+                    var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).Single();
+
+                    hamstersToAdd[i].CageId = null;
+                    cage.CageSize--;
+
+                    hamstersToAdd[i].ExerciseAreaId = exerciseArea.Id;
+                    exerciseArea.CageSize++;
+
+                    var addActivityLogTask = CreateAddActivityLog(activityId, hamstersToAdd[i].Id);
+                    taskList.Add(addActivityLogTask);
+
+                    hamstersToAdd[i].LastExerciseTime = currentSimulationDate;
+                }
+
+                await Task.WhenAll(taskList);
+                hamsterDb.SaveChanges();
+            }
+        }
+        private async Task TryRemoveFromExerciseArea(Hamster hamster, ExerciseArea exerciseArea, int activityId)
+        {
             await Task.Run(() =>
             {
+                TimeSpan timeUntilEndOfDay = currentSimulationDate - new DateTime(currentSimulationDate.Year, currentSimulationDate.Month,
+                            currentSimulationDate.Day, 17, 0, 0);
+
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
+                    TimeSpan timeSpan = currentSimulationDate - hamster.ActivityLogs.Where(a =>
+                                        a.Activity.ActivityName == "Exercise" && a.SimulationId == currentSimulationId)
+                                        .Select(a => a.TimeStamp).Single();
 
+                    if (timeSpan.TotalMinutes >= 60)
+                    {
+                        if (timeUntilEndOfDay.TotalMinutes >= 120)
+                        {
+                            hamster.ExerciseAreaId = null;
+                            exerciseArea.CageSize--;
+
+                            var addCageActivityLogTask = CreateAddActivityLog(activityId, hamster.Id);
+
+                            hamster.CageId = hamsterDb.Cages.Where(c => c.CageSize < 4
+                                                    && c.Hamsters.First().IsFemale == hamster.IsFemale
+                                                    || c.CageSize == 0)
+                                                    .Select(c => c.Id).First();
+                        }
+                    }
                 }
             });
         }
