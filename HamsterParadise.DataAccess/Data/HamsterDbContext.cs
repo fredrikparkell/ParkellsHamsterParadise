@@ -11,6 +11,7 @@ namespace HamsterParadise.DataAccess
     {
         private static string ConnString = @"Server=DESKTOP-C9DV26N\SQLEXPRESS;Database=advFredrikParkell;
                                             Trusted_Connection=True;MultipleActiveResultSets=True;";
+
         public DbSet<Activity> Activities { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<Cage> Cages { get; set; }
