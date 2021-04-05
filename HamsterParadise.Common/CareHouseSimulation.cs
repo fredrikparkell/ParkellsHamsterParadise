@@ -13,6 +13,7 @@ namespace HamsterParadise.Common
     public class CareHouseSimulation
     {
         private int elapsedTicks;
+        private int elapsedDays;
         private int tickTotalRunTime; // om 3 dagar, typ 3*100 = 300 ticks varpå varje 100 ticks
                                       // sover den i några sekunder för att simulera tiden mellan
                                       // 17:00 -> 07:00 samt ger tid för att läsa sammanfattningen på skärmen
@@ -23,30 +24,37 @@ namespace HamsterParadise.Common
         public CareHouseSimulation(int tickSpeed, int daysToRun) 
         {
             CheckIsDatabaseCreated();
+            //Console.WriteLine("made it this far");
+            //Console.ReadKey();
+            //Console.ReadKey();
+
             var taskNullify = NullifyHamsters();
+            var taskCreateNewSim = CreateAddSimulation();
 
             elapsedTicks = 0;
+            elapsedDays = 0;
             tickTotalRunTime = daysToRun * 100; // tex 3 * 100 = 300 ticks totalt
-            currentSimulationDate = new DateTime(2021, 4, 01, 7, 0, 0);
-
-            var taskCreateSim = CreateAddSimulation();
-            var taskInitialMove = MoveToCages();
-
 
             timeTicker = new TimeTicker(1000/tickSpeed); // sets time of the ticker to 1000 ms (1 second)
                                                          // divided by ex. 3 (ticks per second) = 333 ms
-            timeTicker.SendTick += MethodListeningToTimerEvent;
+            timeTicker.SendOutTick += MethodListeningToTimerEvent;
             timeTicker.StartTimer();
         }
 
         internal async void MethodListeningToTimerEvent(object sender, TimerEventArgs e)
         {
             elapsedTicks = e.TickCounter;
+            elapsedDays = e.TickDays;
+            currentSimulationDate = e.TickDate;
 
-            currentSimulationDate.AddMinutes(6);
             if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0)
             {
                 // avsluta dagen, avhämtning för hamstrarna
+            }
+            else
+            {
+                // kolla olika saker, do stuff
+                var taskInitialMove = MoveToCages();
             }
 
 
@@ -60,7 +68,31 @@ namespace HamsterParadise.Common
             {
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
+                    var hamstersWithNoCage = hamsterDb.Hamsters.Where(c => c.CageId == null && c.ExerciseAreaId == null).ToList();
 
+                    for (int i = 0; i < hamstersWithNoCage.Count(); i++)
+                    {
+                        TimeSpan timeSpan = currentSimulationDate-hamstersWithNoCage[i].ActivityLogs.Where(a => 
+                                                            a.Activity.ActivityName == "Exercise" && a.SimulationId == currentSimulationId)
+                                                            .Select(a => a.TimeStamp).Single();
+                        if (timeSpan.TotalMinutes > 60)
+                        {
+                            var exerciseArea = hamsterDb.ExerciseAreas.Where(e => e.Id == hamstersWithNoCage[i].ExerciseAreaId).Single();
+                            hamstersWithNoCage[i].ExerciseAreaId = null;
+                            exerciseArea.CageSize--;
+                        }
+
+
+
+                        hamstersWithNoCage[i].CageId = hamsterDb.Cages.Where(c => c.CageSize != 3 &&
+                                                        c.Hamsters.FirstOrDefault().IsFemale == hamstersWithNoCage[i].IsFemale)
+                                                        .Select(c => c.Id).First();
+                        if (hamstersWithNoCage[i].CheckedInTime == null)
+                        {
+                            var addActivityLogTask = CreateAddActivityLog(hamsterDb.Activities.Where(a => a.ActivityName == "Arrived")
+                                                .Select(a => a.Id).Single(), hamstersWithNoCage[i].Id);
+                        }
+                    }
                 }
             });
         } // MoveArrivedHamstersToCages? Behöver den här vara async?
@@ -120,29 +152,29 @@ namespace HamsterParadise.Common
             {
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
-                    var hamsters = hamsterDb.Hamsters.Select(h => h).ToList();
-
-                    for (int i = 0; i < hamsters.Count; i++)
-                    {
-                        hamsters[i].CageId = null;
-                        hamsters[i].ExerciseAreaId = null;
-                        hamsters[i].CheckedInTime = null;
-                        hamsters[i].LastExerciseTime = null;
-                    }
+                    hamsterDb.Database.ExecuteSqlRaw("EXEC NullHamsterForNewSimulation"); // calling a stored procedure made in EF with migration
                     hamsterDb.SaveChanges();
                 }
             });
-        } // this is for when for example the simulation was ended prematurely
-        private async Task NullCageSize(object cageType)
+        } // this method is for when for example the simulation was ended prematurely
+        private async Task NullCageSize<T>(T cageType)
         {
             await Task.Run(() =>
             {
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
-                    
+                    if (cageType.GetType() == typeof(Cage))
+                    {
+                        hamsterDb.Database.ExecuteSqlRaw("EXEC NullCageCageSize"); // calling a stored procedure made in EF with migration
+                    }
+                    else if (cageType.GetType() == typeof(ExerciseArea))
+                    {
+                        hamsterDb.Database.ExecuteSqlRaw("EXEC NullExerciseAreaCageSize"); // calling a stored procedure made in EF with migration
+                    }
+                    hamsterDb.SaveChanges();
                 }
             });
-        } // this is for when for example the simulation was ended prematurely
+        } // this method is for when for example the simulation was ended prematurely
 
 
 
