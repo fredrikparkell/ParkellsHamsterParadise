@@ -12,6 +12,10 @@ namespace HamsterParadise.Common
     // eventuellt lägga till ett till projekt/assembly för API eller annan kommunikation utåt, dvs inte UI
     public class CareHouseSimulation
     {
+        public event EventHandler<TickInfoEventArgs> SendTickInfo;
+        public event EventHandler<DayInfoEventArgs> SendDayInfo;
+        public event EventHandler<SimulationSummaryEventArgs> SendSimulationSummary;
+
         private int elapsedTicks;
         private int elapsedDays;
         private int tickTotalRunTime; // om 3 dagar, typ 3*100 = 300 ticks varpå varje 100 ticks
@@ -37,6 +41,7 @@ namespace HamsterParadise.Common
 
             timeTicker = new TimeTicker(1000/tickSpeed); // sets time of the ticker to 1000 ms (1 second)
                                                          // divided by ex. 3 (ticks per second) = 333 ms
+            SendSimulationSummary += timeTicker.StopTimer;
             timeTicker.SendOutTick += MethodListeningToTimerEvent;
             timeTicker.StartTimer();
         }
@@ -47,19 +52,144 @@ namespace HamsterParadise.Common
             elapsedDays = e.TickDays;
             currentSimulationDate = e.TickDate;
 
-            if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0)
+            if (elapsedDays == tickTotalRunTime + 1) // avsluta timern och skicka ut total sammanställning av simulationen via event
             {
-                // avsluta dagen, avhämtning för hamstrarna
+                OnSendSimulationSummary();
+            }
+            else if (currentSimulationDate.Hour == 7 && currentSimulationDate.Minute == 0) // påbörja dagen, ankomst av hamstrarna
+            {
+                await ArrivalOfHamsters();
+                OnSendTickInfo();
+            }
+            else if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0) // avsluta dagen, avhämtning för hamstrarna
+            {
+                await PickUpFromCages();
+                OnSendDayInfo();
             }
             else
             {
-                // kolla olika saker, do stuff
-                var taskInitialMove = MoveToCages();
+                // kolla olika saker, do stuff, every 6th minute-check
+                // flytta till och från motion osv
+                MoveToExerciseArea();
+                MoveToCages();
+
+                OnSendTickInfo();
             }
-
-
-
         }
+
+        #region Event-Triggers
+        private void OnSendTickInfo()
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var hamstersInCages = hamsterDb.Hamsters.Where(h => h.CageId != null).GroupBy(c => c.CageId).ToList();
+                var hamstersInExerciseArea = hamsterDb.Hamsters.Where(h => h.ExerciseAreaId != null).ToList();
+                var tickSpecificActivityLogs = hamsterDb.ActivityLogs.Where(a => a.TimeStamp == currentSimulationDate
+                                                                && a.SimulationId == currentSimulationId)
+                                                                .OrderBy(a => a.Id).ToList();
+
+                SendTickInfo?.Invoke(this, new TickInfoEventArgs(elapsedTicks, elapsedDays, currentSimulationId, 
+                                        currentSimulationDate, hamstersInCages, hamstersInExerciseArea, tickSpecificActivityLogs));
+            }
+        }
+        private void OnSendDayInfo()
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.TimeStamp.Day == currentSimulationDate.Day
+                                                                 && a.SimulationId == currentSimulationId).GroupBy(h => h.HamsterId)
+                                                                 .OrderBy(h => h.Key).ToList();
+
+                SendDayInfo?.Invoke(this, new DayInfoEventArgs(elapsedTicks, elapsedDays, currentSimulationId,
+                                        currentSimulationDate, activityLogsPerHamster));
+            }
+        }
+        private void OnSendSimulationSummary()
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.SimulationId == currentSimulationId).GroupBy(h => h.HamsterId)
+                                                                 .OrderBy(h => h.Key).ToList();
+
+                SendSimulationSummary?.Invoke(this, new SimulationSummaryEventArgs(elapsedTicks, elapsedDays, currentSimulationId,
+                                        currentSimulationDate, activityLogsPerHamster));
+            }
+        }
+        #endregion
+
+        #region Hamster Movement-functionality
+        private async Task ArrivalOfHamsters()
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var hamstersWithNoCageTask = hamsterDb.Hamsters.ToListAsync();
+                var cagesTask = hamsterDb.Cages.ToListAsync();
+
+                var taskArray = new Task[] { hamstersWithNoCageTask, cagesTask };
+                await Task.WhenAll(taskArray);
+
+                var hamstersWithNoCage = hamstersWithNoCageTask.Result;
+                var cages = cagesTask.Result;
+
+                var arrivalActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Arrival")
+                                            .Select(a => a.Id).Single();
+                var cageActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
+                                            .Select(a => a.Id).Single();
+
+                var taskList = new List<Task>();
+
+                for (int i = 0; i < hamstersWithNoCage.Count(); i++)
+                {
+                    hamstersWithNoCage[i].CageId = cages.Where(c => c.CageSize < 4 
+                                                && c.Hamsters.First().IsFemale == hamstersWithNoCage[i].IsFemale
+                                                || c.CageSize == 0)
+                                                .Select(c => c.Id).First();
+
+                    var cage = cages.Where(c => c.Id == hamstersWithNoCage[i].CageId).Single();
+
+                    var addArrivalActivityLogTask = CreateAddActivityLog(arrivalActivityId, hamstersWithNoCage[i].Id);
+                    taskList.Add(addArrivalActivityLogTask);
+
+                    var addCageActivityLogTask = CreateAddActivityLog(cageActivityId, hamstersWithNoCage[i].Id);
+                    taskList.Add(addCageActivityLogTask);
+
+                    hamstersWithNoCage[i].CheckedInTime = currentSimulationDate;
+
+                    cage.CageSize++;
+                }
+
+                await Task.WhenAll(taskList);
+                hamsterDb.SaveChanges();
+            }
+        } // typ klar?
+        private async Task PickUpFromCages()
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                var taskOne = Task.Run(() => NullifyHamsters());
+                var taskTwo = Task.Run(async () =>
+                {
+                    var hamsters = hamsterDb.Hamsters.ToList();
+                    var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Departure")
+                                            .Select(a => a.Id).Single();
+                    var taskList = new List<Task>();
+
+                    for (int i = 0; i < hamsters.Count(); i++)
+                    {
+                        var addActivityLogTask = CreateAddActivityLog(activityId, hamsters[i].Id);
+                        taskList.Add(addActivityLogTask);
+                    }
+
+                    await Task.WhenAll(taskList);
+                    hamsterDb.SaveChanges();
+                });
+
+                var taskArray = new Task[] { taskOne, taskTwo };
+                await Task.WhenAll(taskArray);
+            }
+        } // typ klar?
+
+
 
 
         private async Task MoveToCages()
@@ -95,7 +225,7 @@ namespace HamsterParadise.Common
                     }
                 }
             });
-        } // MoveArrivedHamstersToCages? Behöver den här vara async?
+        }
         private async Task MoveToExerciseArea()
         {
             await Task.Run(() =>
@@ -105,23 +235,29 @@ namespace HamsterParadise.Common
 
                 }
             });
-        } // Behöver den här vara async?
+        }
+        #endregion
 
 
 
+
+
+
+        #region Create Simulation & ActivityLog
         private async Task CreateAddSimulation()
         {
             await Task.Run(() =>
             {
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
-                    hamsterDb.Simulations.Add(new Simulation { Name = DateTime.Now.ToString() });
+                    hamsterDb.Simulations.Add(new Simulation { Name = "Temp" });
                     var currentSimulation = hamsterDb.Simulations.Last();
+                    currentSimulation.Name = $"Simulation {currentSimulation.Id}- " + DateTime.Now.ToString();
                     currentSimulationId = currentSimulation.Id;
                     hamsterDb.SaveChanges();
                 }
             });
-        }
+        } // typ klar? göra till stored procedure ist?
         private async Task CreateAddActivityLog(int activityId, int hamsterId)
         {
             await Task.Run(() =>
@@ -133,10 +269,10 @@ namespace HamsterParadise.Common
                     hamsterDb.SaveChanges();
                 }
             });
-        }
+        } // typ klar? göra till stored procedure ist?
+        #endregion
 
-
-
+        #region Reset or Nullify for new simulation
         private async Task NullifyHamsters()
         {
             var nullHamsterTask = NullHamster();
@@ -175,12 +311,9 @@ namespace HamsterParadise.Common
                 }
             });
         } // this method is for when for example the simulation was ended prematurely
+        #endregion
 
-
-
-
-
-
+        #region Check if database is created
         private void CheckIsDatabaseCreated()
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
@@ -188,5 +321,6 @@ namespace HamsterParadise.Common
                 hamsterDb.Database.Migrate(); // EnsureCreated?
             }
         } // eventuellt ändra till EnsureCreated istället för Migrate
+        #endregion
     }
 }

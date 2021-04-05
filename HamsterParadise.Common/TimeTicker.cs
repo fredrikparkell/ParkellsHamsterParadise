@@ -50,9 +50,12 @@ namespace HamsterParadise.Common
         {
             // pause or resume timer
         }
-        internal void StopTimer() // koppla ihop den här metoden med att när dagarna är slut så körs detta. nått event typ
+        internal async void StopTimer(object sender, SimulationSummaryEventArgs e)
         {
-            // stop timer
+            await Task.Run(() =>
+            {
+                TickTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            });
         }
     }
 }
