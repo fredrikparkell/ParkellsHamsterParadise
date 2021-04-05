@@ -13,7 +13,6 @@ namespace UI
         private static Random random = new Random();
         private static int totalDaysToSim = 3; // default-värden 3
         private static int ticksPerSecond = 2; // default-värden 2
-        private static UserInput userInput = new UserInput();
         private static UserPrint userPrint = new UserPrint();
         private static CareHouseSimulation careHouseSimulation;
 
@@ -21,6 +20,7 @@ namespace UI
         {
             MainMenu();
         }
+
         public static void MainMenu()
         {
             while (true)
@@ -35,7 +35,7 @@ namespace UI
                 string[] options = new string[] { "Start Simulation", "Change Values (default are already set)",
                                                   "Look at specific simulation","Show Credits", "Exit the program" };
                 
-                Menu mainMenu = new Menu(title, options, 0, 3);
+                UserMenu mainMenu = new UserMenu(title, options, 0, 3);
                 int selectedIndex = mainMenu.Run();
 
                 switch (selectedIndex)
@@ -69,6 +69,10 @@ namespace UI
             Console.ReadKey();
             Console.Clear();
             //careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
+            careHouseSimulation.SendTickInfo += userPrint.PrintTickInfo;
+            careHouseSimulation.SendDayInfo += userPrint.PrintDayInfo;
+            careHouseSimulation.SendSimulationSummary += userPrint.PrintSimulationSummary;
+            
         }
         private static int DaysToSim()
         {
@@ -81,7 +85,7 @@ namespace UI
                                                 "      (3)      ", "      (4)      ", "      (5)      ", "      (6)      ",
                                                 "      (7)      ", "      (8)      ", "      (9)      ", "Random (10->30)" };
 
-                Menu daysToSimMenu = new Menu(title, options, 20, 40);
+                UserMenu daysToSimMenu = new UserMenu(title, options, 20, 40);
                 int selectedIndex = daysToSimMenu.Run();
 
                 switch (selectedIndex)
@@ -105,7 +109,7 @@ namespace UI
                 string[] options = new string[] { "  Default (2)  ", "      (1)      ", "      (2)      ",
                                                 "      (3)      ", "      (4)      ", "      (5)      " };
 
-                Menu ticksPerSecondMenu = new Menu(title, options, 20, 40);
+                UserMenu ticksPerSecondMenu = new UserMenu(title, options, 20, 40);
                 int selectedIndex = ticksPerSecondMenu.Run();
 
                 switch (selectedIndex)

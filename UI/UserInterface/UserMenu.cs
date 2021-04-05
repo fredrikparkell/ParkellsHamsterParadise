@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace UI
 {
-    public class Menu
+    public class UserMenu
     {
         private int selectedIndex;
         private string[] options;
@@ -15,7 +15,7 @@ namespace UI
         private int titleCursorLeft;
         private int optionsCursorLeft;
 
-        public Menu(string headTitle, string[] menuOptions, int _titleCursorLeft, int _optionsCursorLeft)
+        public UserMenu(string headTitle, string[] menuOptions, int _titleCursorLeft, int _optionsCursorLeft)
         {
             title = headTitle;
             options = menuOptions;
