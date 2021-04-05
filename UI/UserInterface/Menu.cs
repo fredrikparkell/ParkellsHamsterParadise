@@ -12,11 +12,17 @@ namespace UI
         private string[] options;
         private string title;
 
-        public Menu(string headTitle, string[] menuOptions)
+        private int titleCursorLeft;
+        private int optionsCursorLeft;
+
+        public Menu(string headTitle, string[] menuOptions, int _titleCursorLeft, int _optionsCursorLeft)
         {
             title = headTitle;
             options = menuOptions;
             selectedIndex = 0;
+
+            titleCursorLeft = _titleCursorLeft;
+            optionsCursorLeft = _optionsCursorLeft;
         }
         public int Run()
         {
@@ -52,6 +58,7 @@ namespace UI
         private void WriteOutMenu()
         {
             Console.CursorVisible = false;
+            Console.SetCursorPosition(titleCursorLeft,0);
             Console.WriteLine(title);
 
             for (int i = 0; i < options.Length; i++)
@@ -63,19 +70,20 @@ namespace UI
                 if (i == selectedIndex)
                 {
                     prefix = " =>";
-                    suffix = "";
+                    suffix = " ";
                     Console.ForegroundColor = ConsoleColor.Black;
                     Console.BackgroundColor = ConsoleColor.White;
                 }
                 else
                 {
                     prefix = "  ";
-                    suffix = " ";
+                    suffix = "  ";
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.BackgroundColor = ConsoleColor.Black;
                 }
+
                 var currPosition = Console.GetCursorPosition();
-                Console.SetCursorPosition(3, currPosition.Top + 1); // currPosition.Left
+                Console.SetCursorPosition(optionsCursorLeft, currPosition.Top + 1);
                 Console.Write($"{prefix} << {currentOption} >>{suffix}");
             }
             Console.ResetColor();
