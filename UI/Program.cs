@@ -9,7 +9,8 @@ namespace UI
             try
             {
                 Console.SetWindowSize(180, 50);
-                UserInterface.RunMainUI();
+                UserInterface userInterface = new UserInterface();
+                userInterface.RunMainUI();
             }
             catch (Exception e)
             {

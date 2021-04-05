@@ -11,17 +11,16 @@ namespace UI
     public class UserInterface
     {
         private static Random random = new Random();
-        private static int totalDaysToSim = 3; // default-värden 3
-        private static int ticksPerSecond = 2; // default-värden 2
+        private bool isTimerStopped;
+        private int totalDaysToSim = 3; // default-värden 3
+        private int ticksPerSecond = 2; // default-värden 2
         private static UserPrint userPrint = new UserPrint();
-        private static CareHouseSimulation careHouseSimulation;
 
-        public static void RunMainUI()
+        public void RunMainUI()
         {
             MainMenu();
         }
-
-        public static void MainMenu()
+        public void MainMenu()
         {
             while (true)
             {
@@ -62,19 +61,46 @@ namespace UI
             }
         }
 
-        private static void StartSimulation()
+        private void StartSimulation()
         {
             Console.WriteLine("\n\nStarting simulation..");
-            //careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
             Console.ReadKey();
             Console.Clear();
-            //careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
+
+            CareHouseSimulation careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
+
             careHouseSimulation.SendTickInfo += userPrint.PrintTickInfo;
             careHouseSimulation.SendDayInfo += userPrint.PrintDayInfo;
             careHouseSimulation.SendSimulationSummary += userPrint.PrintSimulationSummary;
-            
+            careHouseSimulation.SendSimulationSummary += StopControlOfTimer;
+
+            ControlTimer(careHouseSimulation);
+
+            careHouseSimulation.SendTickInfo -= userPrint.PrintTickInfo;
+            careHouseSimulation.SendDayInfo -= userPrint.PrintDayInfo;
+            careHouseSimulation.SendSimulationSummary -= userPrint.PrintSimulationSummary;
+            careHouseSimulation.SendSimulationSummary -= StopControlOfTimer;
         }
-        private static int DaysToSim()
+        private void ControlTimer(CareHouseSimulation careHouseSimulation)
+        {
+            isTimerStopped = false;
+            ConsoleKeyInfo keyInfo;
+
+            do
+            {
+                keyInfo = Console.ReadKey();
+                if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    careHouseSimulation.ManipulateTimer();
+                }
+            } while (isTimerStopped != true);
+        }
+        public async void StopControlOfTimer(object sender, SimulationSummaryEventArgs e)
+        {
+            await Task.Run(() => { isTimerStopped = true; });
+        }
+
+        private int DaysToSim()
         {
             while (true)
             {
@@ -99,7 +125,7 @@ namespace UI
                 }
             }
         }
-        private static int TicksPerSecond()
+        private int TicksPerSecond()
         {
             while (true)
             {
@@ -121,11 +147,12 @@ namespace UI
                 }
             }
         }
-        private static void ShowCredits()
+
+        private void ShowCredits()
         {
             
         }
-        private static void SimulationMenu()
+        private void SimulationMenu()
         {
 
         }
