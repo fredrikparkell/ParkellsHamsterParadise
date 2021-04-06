@@ -32,7 +32,7 @@ namespace HamsterParadise.Common
         {
             tickCounter++;
 
-            if (tickCounter.ToString().EndsWith("01")) // ful-lösning?? 
+            if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0) // ful-lösning?? tickCounter.ToString().EndsWith("01")
             { 
                 currentSimulationDate = currentSimulationDate.AddHours(14);
                 tickDayCounter++;

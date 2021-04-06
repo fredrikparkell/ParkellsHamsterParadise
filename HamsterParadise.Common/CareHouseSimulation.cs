@@ -53,7 +53,7 @@ namespace HamsterParadise.Common
             elapsedDays = e.TickDays;
             currentSimulationDate = e.TickDate;
 
-            if (elapsedDays == tickTotalRunTime + 1) // avsluta timern och skicka ut total sammanställning av simulationen via event
+            if (currentSimulationDate.Day == tickTotalRunTime/100 + 1) // avsluta timern och skicka ut total sammanställning av simulationen via event
             {
                 OnSendSimulationSummary();
             }
@@ -79,10 +79,11 @@ namespace HamsterParadise.Common
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
-                var hamstersInCages = hamsterDb.Hamsters.Where(h => h.CageId != null).GroupBy(c => c.CageId).ToList();
+                var hamstersInCages = hamsterDb.Hamsters.Where(h => h.CageId != null).AsEnumerable().GroupBy(c => c.CageId).ToList();
                 var hamstersInExerciseArea = hamsterDb.Hamsters.Where(h => h.ExerciseAreaId != null).ToList();
                 var tickSpecificActivityLogs = hamsterDb.ActivityLogs.Where(a => a.TimeStamp == currentSimulationDate
                                                                 && a.SimulationId == currentSimulationId)
+                                                                .Include(a => a.Activity)
                                                                 .OrderBy(a => a.Id).ToList();
 
                 SendTickInfo?.Invoke(this, new TickInfoEventArgs(elapsedTicks, elapsedDays, currentSimulationId, 
@@ -94,7 +95,7 @@ namespace HamsterParadise.Common
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
                 var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.TimeStamp.Day == currentSimulationDate.Day
-                                                                 && a.SimulationId == currentSimulationId).GroupBy(h => h.HamsterId)
+                                                                 && a.SimulationId == currentSimulationId).AsEnumerable().GroupBy(h => h.HamsterId)
                                                                  .OrderBy(h => h.Key).ToList();
 
                 SendDayInfo?.Invoke(this, new DayInfoEventArgs(elapsedTicks, elapsedDays, currentSimulationId,
@@ -105,7 +106,7 @@ namespace HamsterParadise.Common
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
-                var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.SimulationId == currentSimulationId).GroupBy(h => h.HamsterId)
+                var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.SimulationId == currentSimulationId).AsEnumerable().GroupBy(h => h.HamsterId)
                                                                  .OrderBy(h => h.Key).ToList();
 
                 SendSimulationSummary?.Invoke(this, new SimulationSummaryEventArgs(elapsedTicks, elapsedDays, currentSimulationId,
@@ -119,28 +120,22 @@ namespace HamsterParadise.Common
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
-                var hamstersWithNoCageTask = hamsterDb.Hamsters.ToListAsync();
-                var cagesTask = hamsterDb.Cages.ToListAsync();
+                var hamstersWithNoCage = hamsterDb.Hamsters.ToList();
+                var cages = hamsterDb.Cages.ToList();
 
-                var taskArray = new Task[] { hamstersWithNoCageTask, cagesTask };
-                await Task.WhenAll(taskArray);
-
-                var hamstersWithNoCage = hamstersWithNoCageTask.Result;
-                var cages = cagesTask.Result;
-
-                var arrivalActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Arrival")
-                                            .Select(a => a.Id).Single();
+                var arrivalActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Arrived")
+                                            .Select(a => a.Id).SingleOrDefault();
                 var cageActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
-                                            .Select(a => a.Id).Single();
+                                            .Select(a => a.Id).SingleOrDefault();
 
                 var taskList = new List<Task>();
 
                 for (int i = 0; i < hamstersWithNoCage.Count(); i++)
                 {
-                    hamstersWithNoCage[i].CageId = cages.Where(c => c.CageSize < 4 
+                    hamstersWithNoCage[i].CageId = cages.Where(c => c.CageSize < 3 && c.CageSize > 0
                                                 && c.Hamsters.First().IsFemale == hamstersWithNoCage[i].IsFemale
                                                 || c.CageSize == 0)
-                                                .Select(c => c.Id).First();
+                                                .Select(c => c.Id).FirstOrDefault();
 
                     var cage = cages.Where(c => c.Id == hamstersWithNoCage[i].CageId).Single();
 
@@ -153,12 +148,13 @@ namespace HamsterParadise.Common
                     hamstersWithNoCage[i].CheckedInTime = currentSimulationDate;
 
                     cage.CageSize++;
+                    hamsterDb.SaveChanges();
                 }
 
                 await Task.WhenAll(taskList);
                 hamsterDb.SaveChanges();
             }
-        } // typ klar?
+        } // eventuellt göra under-metod som lägger till varje hamster asynkront i burarna
         private async Task PickUpFromCages()
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
@@ -193,103 +189,110 @@ namespace HamsterParadise.Common
                 var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
                                 .Select(a => a.Id).Single();
 
-                var taskList = new List<Task>();
-
                 if (exerciseArea.CageSize != 0)
                 {
-                    var hamstersInExerciseArea = hamsterDb.Hamsters.Where(h => h.ExerciseAreaId != null).ToList();
+                    var hamstersInExerciseArea = hamsterDb.Hamsters.Where(h => h.ExerciseAreaId != null).Include(h => h.ExerciseArea).ToList();
 
-                    for (int i = 0; i < hamstersInExerciseArea.Count(); i++)
+                    TimeSpan timeUntilEndOfDay = new DateTime(currentSimulationDate.Year, currentSimulationDate.Month,
+                                   currentSimulationDate.Day, 17, 0, 0) - currentSimulationDate;
+
+                    TimeSpan timeSpan = currentSimulationDate - hamstersInExerciseArea.First().LastExerciseTime.Value;
+
+                    if (timeSpan.TotalMinutes >= 60)
                     {
-                        var checkTimeTask = TryRemoveFromExerciseArea(hamstersInExerciseArea[i], exerciseArea, activityId);
-                        taskList.Add(checkTimeTask);
+                        if (timeUntilEndOfDay.TotalMinutes >= 120 || timeUntilEndOfDay.TotalMinutes == 6)
+                        {
+                            for (int i = 0; i < hamstersInExerciseArea.Count(); i++)
+                            {
+                                await TryRemoveFromExerciseArea(hamstersInExerciseArea[i], activityId);
+                            }
+                            hamsterDb.SaveChanges();
+
+                            await TryAddToExerciseArea();
+                        }
+                    }
+                }
+                else
+                {
+                    await TryAddToExerciseArea();
+                }
+            }
+        }
+        private async Task TryAddToExerciseArea()
+        {
+            using (HamsterDbContext hamsterDb = new HamsterDbContext())
+            {
+                TimeSpan timeUntilEndOfDay = new DateTime(currentSimulationDate.Year, currentSimulationDate.Month,
+                                   currentSimulationDate.Day, 17, 0, 0) - currentSimulationDate;
+
+                if (timeUntilEndOfDay.TotalMinutes != 6)
+                {
+                    var exerciseArea = hamsterDb.ExerciseAreas.First();
+                    var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Exercise")
+                                .Select(a => a.Id).Single();
+
+                    var hamstersNotInExerciseArea = hamsterDb.Hamsters.Where(c => c.ExerciseAreaId == null)
+                                                        .OrderBy(t => t.LastExerciseTime)
+                                                        .ThenBy(t => t.LastExerciseTime.HasValue)
+                                                        .Select(c => c).ToList();
+
+                    var hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
+                                                                 .Take(6).ToList();
+
+                    var taskList = new List<Task>();
+
+                    for (int i = 0; i < hamstersToAdd.Count(); i++)
+                    {
+                        var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).Single();
+
+                        hamstersToAdd[i].CageId = null;
+                        cage.CageSize--;
+
+                        hamstersToAdd[i].ExerciseAreaId = exerciseArea.Id;
+                        exerciseArea.CageSize++;
+
+                        var addActivityLogTask = CreateAddActivityLog(activityId, hamstersToAdd[i].Id);
+                        taskList.Add(addActivityLogTask);
+
+                        hamstersToAdd[i].LastExerciseTime = currentSimulationDate;
+
+                        hamsterDb.SaveChanges();
                     }
 
                     await Task.WhenAll(taskList);
                     hamsterDb.SaveChanges();
-
-                    await TryAddToExerciseArea(exerciseArea);
-                }
-                else
-                {
-                    await TryAddToExerciseArea(exerciseArea); // lägga till 3-6 stycken hamstrar av samma kön
                 }
             }
-        }
-        private async Task TryAddToExerciseArea(ExerciseArea exerciseArea)
-        {
-            using (HamsterDbContext hamsterDb = new HamsterDbContext())
-            {
-                var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Exercise")
-                            .Select(a => a.Id).Single();
-
-                var hamstersNotInExerciseArea = hamsterDb.Hamsters.Where(c => c.ExerciseAreaId == null)
-                                                    .OrderBy(t => t.LastExerciseTime)
-                                                    .ThenBy(t => t.LastExerciseTime.HasValue)
-                                                    .Select(c => c).ToList();
-
-                var hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
-                                                             .Take(6).ToList();
-
-                var taskList = new List<Task>();
-
-                for (int i = 0; i < hamstersToAdd.Count(); i++)
-                {
-                    var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).Single();
-
-                    hamstersToAdd[i].CageId = null;
-                    cage.CageSize--;
-
-                    hamstersToAdd[i].ExerciseAreaId = exerciseArea.Id;
-                    exerciseArea.CageSize++;
-
-                    var addActivityLogTask = CreateAddActivityLog(activityId, hamstersToAdd[i].Id);
-                    taskList.Add(addActivityLogTask);
-
-                    hamstersToAdd[i].LastExerciseTime = currentSimulationDate;
-                }
-
-                await Task.WhenAll(taskList);
-                hamsterDb.SaveChanges();
-            }
-        }
-        private async Task TryRemoveFromExerciseArea(Hamster hamster, ExerciseArea exerciseArea, int activityId)
+        } // eventuellt göra under-metod som lägger till varje hamster asynkront i ExerciseArea
+        private async Task TryRemoveFromExerciseArea(Hamster hamster, int activityId) // async Task void
         {
             await Task.Run(() =>
             {
-                TimeSpan timeUntilEndOfDay = currentSimulationDate - new DateTime(currentSimulationDate.Year, currentSimulationDate.Month,
-                            currentSimulationDate.Day, 17, 0, 0);
-
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
-                    TimeSpan timeSpan = currentSimulationDate - hamster.ActivityLogs.Where(a =>
-                                        a.Activity.ActivityName == "Exercise" && a.SimulationId == currentSimulationId)
-                                        .Select(a => a.TimeStamp).Single();
+                    var theExerciseArea = hamsterDb.ExerciseAreas.First();
 
-                    if (timeSpan.TotalMinutes >= 60)
-                    {
-                        if (timeUntilEndOfDay.TotalMinutes >= 120)
-                        {
-                            hamster.ExerciseAreaId = null;
-                            exerciseArea.CageSize--;
+                    var theHamster = hamsterDb.Hamsters.Where(h => h.Id == hamster.Id).Single();
 
-                            var addCageActivityLogTask = CreateAddActivityLog(activityId, hamster.Id);
+                    hamster.ExerciseAreaId = null;
+                    theExerciseArea.CageSize--;
 
-                            hamster.CageId = hamsterDb.Cages.Where(c => c.CageSize < 4
-                                                    && c.Hamsters.First().IsFemale == hamster.IsFemale
-                                                    || c.CageSize == 0)
-                                                    .Select(c => c.Id).First();
-                        }
-                    }
+                    var addCageActivityLogTask = CreateAddActivityLog(activityId, theHamster.Id);
+
+                    theHamster.CageId = hamsterDb.Cages.Where(c => c.CageSize < 3 && c.CageSize > 0
+                                            && c.Hamsters.First().IsFemale == theHamster.IsFemale
+                                            || c.CageSize == 0)
+                                            .Select(c => c.Id).First();
+
+                    var cage = hamsterDb.Cages.Where(c => c.Id == theHamster.CageId).Single();
+
+                    cage.CageSize++;
+
+                    hamsterDb.SaveChanges();
                 }
             });
         }
         #endregion
-
-
-
-
-
 
         #region Create Simulation & ActivityLog
         private async Task CreateAddSimulation()
@@ -299,7 +302,8 @@ namespace HamsterParadise.Common
                 using (HamsterDbContext hamsterDb = new HamsterDbContext())
                 {
                     hamsterDb.Simulations.Add(new Simulation { Name = "Temp" });
-                    var currentSimulation = hamsterDb.Simulations.Last();
+                    hamsterDb.SaveChanges();
+                    var currentSimulation = hamsterDb.Simulations.OrderBy(s => s.Id).Last();
                     currentSimulation.Name = $"Simulation {currentSimulation.Id}- " + DateTime.Now.ToString();
                     currentSimulationId = currentSimulation.Id;
                     hamsterDb.SaveChanges();
