@@ -200,7 +200,7 @@ namespace HamsterParadise.Common
 
                     if (timeSpan.TotalMinutes >= 60)
                     {
-                        if (timeUntilEndOfDay.TotalMinutes >= 120 || timeUntilEndOfDay.TotalMinutes == 6)
+                        if (timeUntilEndOfDay.TotalMinutes >= 60 || timeUntilEndOfDay.TotalMinutes == 6)
                         {
                             for (int i = 0; i < hamstersInExerciseArea.Count(); i++)
                             {
