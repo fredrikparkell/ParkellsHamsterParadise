@@ -9,6 +9,7 @@ namespace UI
             try
             {
                 Console.SetWindowSize(180, 50);
+
                 UserInterface userInterface = new UserInterface();
                 userInterface.RunMainUI();
             }

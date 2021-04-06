@@ -12,7 +12,7 @@ namespace UI
     {
         private static Random random = new Random();
         private bool isTimerStopped;
-        private int totalDaysToSim = 3; // default-värden 3
+        private int totalDaysToSim = 2; // default-värden 2
         private int ticksPerSecond = 2; // default-värden 2
         private static UserPrint userPrint = new UserPrint();
 
@@ -63,9 +63,9 @@ namespace UI
 
         private void StartSimulation()
         {
-            Console.WriteLine("\n\nStarting simulation..");
-            Console.ReadKey();
-            Console.Clear();
+            //Console.WriteLine("\n\nStarting simulation..");
+            //Console.ReadKey();
+            //Console.Clear();
 
             CareHouseSimulation careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
 
