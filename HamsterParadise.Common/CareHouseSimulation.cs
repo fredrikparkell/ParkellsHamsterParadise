@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
@@ -31,10 +32,9 @@ namespace HamsterParadise.Common
 
         public CareHouseSimulation(int tickSpeed, int daysToRun) 
         {
-            CheckIsDatabaseCreated();
+            currentSimulationDate = new DateTime(2021, 4, 01, 7, 0, 0);
 
-            var taskNullify = NullifyHamsters();
-            var taskCreateNewSim = CreateAddSimulation();
+            Initialize();
 
             elapsedTicks = 0;
             elapsedDays = 0;
@@ -46,7 +46,17 @@ namespace HamsterParadise.Common
             timeTicker.SendOutTick += MethodListeningToTimerEvent;
             timeTicker.StartTimer();
         }
+        private async void Initialize()
+        {
+            CheckIsDatabaseCreated();
 
+            var taskNullify = NullifyHamsters();
+            var taskCreateNewSim = CreateAddSimulation();
+            var taskArray = new Task[] { taskNullify, taskCreateNewSim };
+
+            await Task.WhenAll(taskArray);
+            await ArrivalOfHamsters();
+        }
         internal async void MethodListeningToTimerEvent(object sender, TimerEventArgs e)
         {
             elapsedTicks = e.TickCounter;
@@ -121,17 +131,23 @@ namespace HamsterParadise.Common
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
                 var hamstersWithNoCage = hamsterDb.Hamsters.ToList();
-                var cages = hamsterDb.Cages.ToList();
+                var cages = hamsterDb.Cages.Include(h => h.Hamsters).ToList();
 
                 var arrivalActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Arrived")
                                             .Select(a => a.Id).SingleOrDefault();
                 var cageActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
                                             .Select(a => a.Id).SingleOrDefault();
 
+                DateTime tempCurrentSimDate = new DateTime();
+                tempCurrentSimDate = currentSimulationDate;
+
                 var taskList = new List<Task>();
 
                 for (int i = 0; i < hamstersWithNoCage.Count(); i++)
                 {
+                    //var addHamsterToCageTask = TryAddToCage(hamstersWithNoCage[i], tempCurrentSimDate, cages);
+                    //var addHamsterToCageTask = Task.Run(() =>
+                    //{
                     hamstersWithNoCage[i].CageId = cages.Where(c => c.CageSize < 3 && c.CageSize > 0
                                                 && c.Hamsters.First().IsFemale == hamstersWithNoCage[i].IsFemale
                                                 || c.CageSize == 0)
@@ -139,16 +155,18 @@ namespace HamsterParadise.Common
 
                     var cage = cages.Where(c => c.Id == hamstersWithNoCage[i].CageId).Single();
 
+                    cage.CageSize++;
+                    hamstersWithNoCage[i].CheckedInTime = tempCurrentSimDate;
+
+                    hamsterDb.SaveChanges();
+                    //});
+                    //taskList.Add(addHamsterToCageTask);
+
                     var addArrivalActivityLogTask = CreateAddActivityLog(arrivalActivityId, hamstersWithNoCage[i].Id);
                     taskList.Add(addArrivalActivityLogTask);
 
                     var addCageActivityLogTask = CreateAddActivityLog(cageActivityId, hamstersWithNoCage[i].Id);
                     taskList.Add(addCageActivityLogTask);
-
-                    hamstersWithNoCage[i].CheckedInTime = currentSimulationDate;
-
-                    cage.CageSize++;
-                    hamsterDb.SaveChanges();
                 }
 
                 await Task.WhenAll(taskList);
@@ -187,7 +205,7 @@ namespace HamsterParadise.Common
             {
                 var exerciseArea = hamsterDb.ExerciseAreas.First();
                 var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
-                                .Select(a => a.Id).Single();
+                                .Select(a => a.Id).First(); // Single
 
                 if (exerciseArea.CageSize != 0)
                 {
@@ -229,7 +247,7 @@ namespace HamsterParadise.Common
                 {
                     var exerciseArea = hamsterDb.ExerciseAreas.First();
                     var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Exercise")
-                                .Select(a => a.Id).Single();
+                                .Select(a => a.Id).First(); // Single
 
                     var hamstersNotInExerciseArea = hamsterDb.Hamsters.Where(c => c.ExerciseAreaId == null)
                                                         .OrderBy(t => t.LastExerciseTime)
@@ -243,7 +261,7 @@ namespace HamsterParadise.Common
 
                     for (int i = 0; i < hamstersToAdd.Count(); i++)
                     {
-                        var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).Single();
+                        var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).First(); // Single
 
                         hamstersToAdd[i].CageId = null;
                         cage.CageSize--;
@@ -272,7 +290,7 @@ namespace HamsterParadise.Common
                 {
                     var theExerciseArea = hamsterDb.ExerciseAreas.First();
 
-                    var theHamster = hamsterDb.Hamsters.Where(h => h.Id == hamster.Id).Single();
+                    var theHamster = hamsterDb.Hamsters.Where(h => h.Id == hamster.Id).First(); // Single
 
                     hamster.ExerciseAreaId = null;
                     theExerciseArea.CageSize--;
@@ -284,7 +302,7 @@ namespace HamsterParadise.Common
                                             || c.CageSize == 0)
                                             .Select(c => c.Id).First();
 
-                    var cage = hamsterDb.Cages.Where(c => c.Id == theHamster.CageId).Single();
+                    var cage = hamsterDb.Cages.Where(c => c.Id == theHamster.CageId).First(); // Single
 
                     cage.CageSize++;
 
