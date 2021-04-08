@@ -9,8 +9,8 @@ namespace HamsterParadise.Common
 {
     internal class TimeTicker
     {
-        DateTime startTime = new DateTime();
-        DateTime newTime = new DateTime();
+        //DateTime startTime = new DateTime();
+        //DateTime newTime = new DateTime();
 
         public event EventHandler<TimerEventArgs> SendOutTick;
 
