@@ -15,8 +15,10 @@ namespace HamsterParadise.Common
         public DateTime CurrentSimulationDate { get; }
 
         public List<IGrouping<int, ActivityLog>> ActivityLogsPerHamster { get; }
+        public List<Hamster> Hamsters { get; }
 
-        public SimulationSummaryEventArgs(int elapsedTicks, int elapsedDays, int currentSimulationId, DateTime currentSimulationDate, List<IGrouping<int, ActivityLog>> activityLogsPerHamster)
+        public SimulationSummaryEventArgs(int elapsedTicks, int elapsedDays, int currentSimulationId, DateTime currentSimulationDate, 
+                            List<IGrouping<int, ActivityLog>> activityLogsPerHamster, List<Hamster> hamsters)
         {
             ElapsedTicks = elapsedTicks;
             ElapsedDays = elapsedDays;
@@ -24,6 +26,7 @@ namespace HamsterParadise.Common
             CurrentSimulationDate = currentSimulationDate;
 
             ActivityLogsPerHamster = activityLogsPerHamster;
+            Hamsters = hamsters;
         }
     }
 }
