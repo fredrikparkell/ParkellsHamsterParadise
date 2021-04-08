@@ -9,13 +9,10 @@ namespace HamsterParadise.Common
 {
     internal class TimeTicker
     {
-        //DateTime startTime = new DateTime();
-        //DateTime newTime = new DateTime();
-
         public event EventHandler<TimerEventArgs> SendOutTick;
 
         private int tickCounter;
-        private int tickDayCounter; // kanske kan klara mig utan den här eller lägga den nån annanstans
+        private int tickDayCounter;
         private int tickSpeed;
 
         private bool isRunning;
@@ -33,16 +30,9 @@ namespace HamsterParadise.Common
 
         private void SendOutTicks(object state)
         {
-            
-            //if (tickCounter == 0) { startTime = DateTime.Now; Console.WriteLine("\n"); }
-            //else { startTime = newTime; }
-            //newTime = DateTime.Now;
-
-            //if (tickCounter != 0) { TimeSpan time = startTime - newTime; Console.WriteLine(time); }
-
             tickCounter++;
 
-            if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0) // ful-lösning?? tickCounter.ToString().EndsWith("01")
+            if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0)
             { 
                 currentSimulationDate = currentSimulationDate.AddHours(14);
                 tickDayCounter++;
