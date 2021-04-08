@@ -390,9 +390,9 @@ namespace HamsterParadise.Common
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
-                hamsterDb.Database.Migrate(); // EnsureCreated?
+                hamsterDb.Database.Migrate();
             }
-        } // eventuellt ändra till EnsureCreated istället för Migrate
+        }
         #endregion
     }
 }
