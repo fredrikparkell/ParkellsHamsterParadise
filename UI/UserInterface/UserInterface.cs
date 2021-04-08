@@ -253,9 +253,7 @@ namespace UI
         {
             SimulationSummaryEventArgs allInfo = simulationInfo.GetAllActivityLogsPerSimulation(totalDays, currentSimulationId);
 
-            
-
-
+            userPrint.WriteOutSimulationSummary(allInfo);
 
             Console.ReadKey();
         }
