@@ -107,9 +107,10 @@ namespace HamsterParadise.Common
                 var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.TimeStamp.Day == currentSimulationDate.Day
                                                                  && a.SimulationId == currentSimulationId).AsEnumerable().GroupBy(h => h.HamsterId)
                                                                  .OrderBy(h => h.Key).ToList();
+                var hamsters = hamsterDb.Hamsters.ToList();
 
                 SendDayInfo?.Invoke(this, new DayInfoEventArgs(elapsedTicks, elapsedDays, currentSimulationId,
-                                        currentSimulationDate, activityLogsPerHamster));
+                                        currentSimulationDate, activityLogsPerHamster, hamsters));
             }
         }
         private void OnSendSimulationSummary()
@@ -118,9 +119,10 @@ namespace HamsterParadise.Common
             {
                 var activityLogsPerHamster = hamsterDb.ActivityLogs.Where(a => a.SimulationId == currentSimulationId).AsEnumerable().GroupBy(h => h.HamsterId)
                                                                  .OrderBy(h => h.Key).ToList();
+                var hamsters = hamsterDb.Hamsters.ToList();
 
                 SendSimulationSummary?.Invoke(this, new SimulationSummaryEventArgs(elapsedTicks, elapsedDays, currentSimulationId,
-                                        currentSimulationDate, activityLogsPerHamster));
+                                        currentSimulationDate, activityLogsPerHamster, hamsters));
             }
         }
         #endregion
