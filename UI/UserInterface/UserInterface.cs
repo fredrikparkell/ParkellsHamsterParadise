@@ -15,6 +15,8 @@ namespace UI
         private int totalDaysToSim = 3; // default-värden 3
         private int ticksPerSecond = 2; // default-värden 2
         private static UserPrint userPrint = new UserPrint();
+        private static SimulationInfo simulationInfo = new SimulationInfo();
+        private int currentSimulationInfoId;
 
         public void RunMainUI()
         {
@@ -25,14 +27,25 @@ namespace UI
             while (true)
             {
                 Console.Clear();
-                Console.SetCursorPosition(120, 0); Console.Write($"Days to simulate: {totalDaysToSim}");
-                Console.SetCursorPosition(120, 1); Console.Write($"Ticks per second: {ticksPerSecond}");
+                Console.SetCursorPosition(125, 4); Console.Write($"Days to simulate: {totalDaysToSim}");
+                Console.SetCursorPosition(125, 5); Console.Write($"Ticks per second: {ticksPerSecond}");
+                Console.SetCursorPosition(1, 32); Console.ForegroundColor = ConsoleColor.Yellow; Console.Write("Just started up the 'game' for the first time? ");
+                Console.SetCursorPosition(1, 33); Console.ResetColor(); Console.Write("Make sure the connectionstring in the HamsterDbContext.cs-file is right for your SQL Server on your computer");
 
-                string title = @"Some big title I will add later
-
+                string title = @"
+ ██░ ██ ▄▄▄      ███▄ ▄███▓ ██████▄▄▄█████▓█████ ██▀███      ██▓███  ▄▄▄      ██▀███  ▄▄▄     ▓█████▄ ██▓ ██████▓█████ 
+▓██░ ██▒████▄   ▓██▒▀█▀ ██▒██    ▒▓  ██▒ ▓▓█   ▀▓██ ▒ ██▒   ▓██░  ██▒████▄   ▓██ ▒ ██▒████▄   ▒██▀ ██▓██▒██    ▒▓█   ▀ 
+▒██▀▀██▒██  ▀█▄ ▓██    ▓██░ ▓██▄  ▒ ▓██░ ▒▒███  ▓██ ░▄█ ▒   ▓██░ ██▓▒██  ▀█▄ ▓██ ░▄█ ▒██  ▀█▄ ░██   █▒██░ ▓██▄  ▒███   
+░▓█ ░██░██▄▄▄▄██▒██    ▒██  ▒   ██░ ▓██▓ ░▒▓█  ▄▒██▀▀█▄     ▒██▄█▓▒ ░██▄▄▄▄██▒██▀▀█▄ ░██▄▄▄▄██░▓█▄   ░██░ ▒   ██▒▓█  ▄ 
+░▓█▒░██▓▓█   ▓██▒██▒   ░██▒██████▒▒ ▒██▒ ░░▒████░██▓ ▒██▒   ▒██▒ ░  ░▓█   ▓██░██▓ ▒██▒▓█   ▓██░▒████▓░██▒██████▒░▒████▒
+ ▒ ░░▒░▒▒▒   ▓▒█░ ▒░   ░  ▒ ▒▓▒ ▒ ░ ▒ ░░  ░░ ▒░ ░ ▒▓ ░▒▓░   ▒▓▒░ ░  ░▒▒   ▓▒█░ ▒▓ ░▒▓░▒▒   ▓▒█░▒▒▓  ▒░▓ ▒ ▒▓▒ ▒ ░░ ▒░ ░
+ ▒ ░▒░ ░ ▒   ▒▒ ░  ░      ░ ░▒  ░ ░   ░    ░ ░  ░ ░▒ ░ ▒░   ░▒ ░      ▒   ▒▒ ░ ░▒ ░ ▒░ ▒   ▒▒ ░░ ▒  ▒ ▒ ░ ░▒  ░ ░░ ░  ░
+ ░  ░░ ░ ░   ▒  ░      ░  ░  ░  ░   ░        ░    ░░   ░    ░░        ░   ▒    ░░   ░  ░   ▒   ░ ░  ░ ▒ ░  ░  ░    ░   
+ ░  ░  ░     ░  ░      ░        ░            ░  ░  ░                      ░  ░  ░          ░  ░  ░    ░       ░    ░  ░
+                                                                                               ░                       
 (Use the arrow keys to cycle through options and press enter to select an option.)";
                 string[] options = new string[] { "Start Simulation", "Change Values (default are already set)",
-                                                  "Look at specific simulation","Show Credits", "Exit the program" };
+                                                  "Look at specific simulation", "Exit the program" };
                 
                 UserMenu mainMenu = new UserMenu(title, options, 0, 3);
                 int selectedIndex = mainMenu.Run();
@@ -40,6 +53,7 @@ namespace UI
                 switch (selectedIndex)
                 {
                     case 0:
+                        Console.WriteLine("\n\nLoading..");
                         StartSimulation();
                         break;
                     case 1:
@@ -47,12 +61,10 @@ namespace UI
                         ticksPerSecond = TicksPerSecond();
                         break;
                     case 2:
+                        Console.WriteLine("\n\nLoading..");
                         SimulationMenu();
                         break;
                     case 3:
-                        ShowCredits();
-                        break;
-                    case 4:
                         Console.WriteLine("\n\nShutting the program off..");
                         Thread.Sleep(1000);
                         Environment.Exit(0);
@@ -63,10 +75,6 @@ namespace UI
 
         private void StartSimulation()
         {
-            //Console.WriteLine("\n\nStarting simulation..");
-            //Console.ReadKey();
-            //Console.Clear();
-
             CareHouseSimulation careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
 
             careHouseSimulation.SendTickInfo += userPrint.PrintTickInfo;
@@ -105,13 +113,21 @@ namespace UI
             while (true)
             {
                 Console.Clear();
-                string title = @"Some big title I will add here later";
-                // (Use the arrow keys to cycle through options and press enter to select an option.)
+                string title = @"
+  _____                    _              _                 _       _      ___  
+ |  __ \                  | |            (_)               | |     | |    |__ \ 
+ | |  | | __ _ _   _ ___  | |_ ___    ___ _ _ __ ___  _   _| | __ _| |_ ___  ) |
+ | |  | |/ _` | | | / __| | __/ _ \  / __| | '_ ` _ \| | | | |/ _` | __/ _ \/ / 
+ | |__| | (_| | |_| \__ \ | || (_) | \__ | | | | | | | |_| | | (_| | ||  __|_|  
+ |_____/ \__,_|\__, |___/  \__\___/  |___|_|_| |_| |_|\__,_|_|\__,_|\__\___(_)  
+                __/ |                                                           
+               |___/                                                            
+(Use the arrow keys to cycle through options and press enter to select an option.)";
                 string[] options = new string[] { "  Default (3)  ", "      (1)      ", "      (2)      ",
                                                 "      (3)      ", "      (4)      ", "      (5)      ", "      (6)      ",
                                                 "      (7)      ", "      (8)      ", "      (9)      ", "Random (10->30)" };
 
-                UserMenu daysToSimMenu = new UserMenu(title, options, 20, 40);
+                UserMenu daysToSimMenu = new UserMenu(title, options, 10, 25);
                 int selectedIndex = daysToSimMenu.Run();
 
                 switch (selectedIndex)
@@ -130,12 +146,20 @@ namespace UI
             while (true)
             {
                 Console.Clear();
-                string title = @"Some big title I will add here later";
-                // (Use the arrow keys to cycle through options and press enter to select an option.)
+                string title = @"
+  _______ _      _                                                         _ ___  
+ |__   __(_)    | |                                                       | |__ \ 
+    | |   _  ___| | _____   _ __   ___ _ __   ___  ___  ___ ___  _ __   __| |  ) |
+    | |  | |/ __| |/ / __| | '_ \ / _ | '__| / __|/ _ \/ __/ _ \| '_ \ / _` | / / 
+    | |  | | (__|   <\__ \ | |_) |  __| |    \__ |  __| (_| (_) | | | | (_| ||_|  
+    |_|  |_|\___|_|\_|___/ | .__/ \___|_|    |___/\___|\___\___/|_| |_|\__,_|(_)  
+                           | |                                                    
+                           |_|                                                    
+(Use the arrow keys to cycle through options and press enter to select an option.)";
                 string[] options = new string[] { "  Default (2)  ", "      (1)      ", "      (2)      ",
                                                 "      (3)      ", "      (4)      ", "      (5)      " };
 
-                UserMenu ticksPerSecondMenu = new UserMenu(title, options, 20, 40);
+                UserMenu ticksPerSecondMenu = new UserMenu(title, options, 10, 25);
                 int selectedIndex = ticksPerSecondMenu.Run();
 
                 switch (selectedIndex)
@@ -148,13 +172,92 @@ namespace UI
             }
         }
 
-        private void ShowCredits()
-        {
-            
-        }
         private void SimulationMenu()
         {
+            while (true)
+            {
+                string title = @"
+   _____ _                                        _                 _       _   _             
+  / ____| |                                      (_)               | |     | | (_)            
+ | |    | |__   ___   ___  ___  ___    __ _   ___ _ _ __ ___  _   _| | __ _| |_ _  ___  _ __  
+ | |    | '_ \ / _ \ / _ \/ __|/ _ \  / _` | / __| | '_ ` _ \| | | | |/ _` | __| |/ _ \| '_ \ 
+ | |____| | | | (_) | (_) \__ |  __/ | (_| | \__ | | | | | | | |_| | | (_| | |_| | (_) | | | |
+  \_____|_| |_|\___/ \___/|___/\___|  \__,_| |___|_|_| |_| |_|\__,_|_|\__,_|\__|_|\___/|_| |_|
+                                                                                              
+                                                                                              
+(Use the arrow keys to cycle through options and press enter to select an option.)";
+                List<string> allSimulations = simulationInfo.GetAllSimulations();
+                allSimulations.Insert(0, "[Go back to previous menu]");
+                string[] options = allSimulations.ToArray();
+                Console.Clear();
 
+                UserMenu simulationMenu = new UserMenu(title, options, 10, 20);
+                currentSimulationInfoId = simulationMenu.Run();
+
+                if (currentSimulationInfoId == 0) { break; }
+                else 
+                {
+                    string currentSimString = options[currentSimulationInfoId];
+                    string[] splitString = currentSimString.Split('-');
+                    string currentSimSplitString = splitString[0];
+                    string[] splitStringAgain = currentSimSplitString.Split(" ");
+                    currentSimulationInfoId = int.Parse(splitStringAgain[1]);
+
+                    SimulationInfoMenu(currentSimulationInfoId);
+                }
+            }
+        }
+        private void SimulationInfoMenu(int currentSimulationId)
+        {
+            while (true)
+            {
+                Console.Clear();
+                string title = @"
+  _____                             _        _        _ 
+ |  __ \                           | |      | |      | |
+ | |  | | __ _ _   _    ___  _ __  | |_ ___ | |_ __ _| |
+ | |  | |/ _` | | | |  / _ \| '__| | __/ _ \| __/ _` | |
+ | |__| | (_| | |_| | | (_) | |    | || (_) | || (_| | |
+ |_____/ \__,_|\__, |  \___/|_|     \__\___/ \__\__,_|_|
+                __/ |                                   
+               |___/                                    
+(Use the arrow keys to cycle through options and press enter to select an option.)";
+                List<string> allDays = simulationInfo.GetAllDays(currentSimulationId);
+                allDays.Insert(0, "[Go back to previous menu]");
+                allDays.Add("Show total for all days");
+                string[] options = allDays.ToArray();
+
+                UserMenu simulationMenu = new UserMenu(title, options, 10, 20);
+                int currentThingToCheck = simulationMenu.Run();
+
+                if (currentThingToCheck == 0) { break; }
+                else if (currentThingToCheck == options.Length - 1)
+                {
+                    PrintSimulationSummary(options.Length-2,currentSimulationId);
+                }
+                else
+                {
+                    PrintDaySimulationSummary(currentThingToCheck,currentSimulationId);
+                }
+            }
+        }
+        private void PrintDaySimulationSummary(int dayToCheck, int currentSimulationId)
+        {
+            DayInfoEventArgs allHamstersInfo = simulationInfo.GetAllActivityLogsPerDay(dayToCheck,currentSimulationId);
+
+            userPrint.WriteOutDayInfo(allHamstersInfo);
+
+            Console.ReadKey();
+        }
+        private void PrintSimulationSummary(int totalDays, int currentSimulationId)
+        {
+            SimulationSummaryEventArgs allInfo = simulationInfo.GetAllActivityLogsPerSimulation(totalDays, currentSimulationId);
+
+            
+
+
+
+            Console.ReadKey();
         }
     }
 }
