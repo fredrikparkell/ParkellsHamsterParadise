@@ -11,6 +11,7 @@ namespace UI
     public class UserPrint
     {
         private (int Left, int Top) currentPosition;
+        private static TimeSpan timeBetween = new TimeSpan();
 
         #region PrintTickInfo-methods
         public async void PrintTickInfo(object sender, TickInfoEventArgs e)
@@ -255,12 +256,128 @@ namespace UI
 
                 var activityLogs = iGroupHamster.Where(c => c.Id > 0).ToList();
                 var hamster = e.Hamsters.Where(c => c.Id == iGroupHamster.Key).First();
-                var arrived = iGroupHamster.Where(c => c.ActivityId == 1).First();
+
+                var arrivedString = "";
+                var arrived = iGroupHamster.Where(c => c.ActivityId == 1).FirstOrDefault();
+                if (arrived == null) { arrivedString = ""; }
+                else { arrivedString = arrived.TimeStamp.TimeOfDay.ToString(); }
 
                 var timeInCage = 0.0;
                 var timeInEA = 0.0;
-                TimeSpan timeBetween = new TimeSpan();
+
+                var timesInEAint = 0;
                 var timesInEA = iGroupHamster.Where(c => c.ActivityId == 2).ToList();
+                if (timesInEA == null) { timesInEAint = 0; }
+                else { timesInEAint = timesInEA.Count(); }
+
+                for (int j = 0; j < activityLogs.Count(); j++)
+                {
+                    if (j + 1 != activityLogs.Count())
+                    {
+                        timeBetween = activityLogs[j + 1].TimeStamp - activityLogs[j].TimeStamp;
+                        if (activityLogs[j].ActivityId == 3) // Cage
+                        {
+                            timeInCage += timeBetween.TotalMinutes;
+                        }
+                        else if (activityLogs[j].ActivityId == 2) // Exercise
+                        {
+                            timeInEA += timeBetween.TotalMinutes;
+                        }
+                    }
+                }
+
+                var timeSpanString = "";
+                var firstExercise = iGroupHamster.Where(c => c.ActivityId == 2).FirstOrDefault();
+                if (firstExercise == null) { timeSpanString = ""; }
+                else 
+                { 
+                    timeBetween = firstExercise.TimeStamp - arrived.TimeStamp;
+                    timeSpanString = timeBetween.TotalMinutes.ToString();
+                }
+
+                var departureString = "";
+                var departure = iGroupHamster.Where(c => c.ActivityId == 4).FirstOrDefault();
+                if (departure == null) { departureString = ""; }
+                else { departureString = departure.TimeStamp.TimeOfDay.ToString(); }
+
+                Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + (2 + i));
+                string hamsterString = String.Format("{0, -20} {1, -20} {2, -20} {3, -20} {4, -20} {5, -20} {6, -20}",
+                                $"{hamster.Name}", $"{arrivedString}", $"{timeInCage} minutes", $"{timeInEA} minutes", $"{timesInEAint} times",
+                                $"{timeSpanString} minutes", $"{departureString}");
+                Console.Write(hamsterString);
+            }
+        }
+        #endregion
+
+        #region PrintSimulationSummary
+        public async void PrintSimulationSummary(object sender, SimulationSummaryEventArgs e)
+        {
+            await Task.Run(() =>
+            {
+                WriteOutSimulationSummary(e);
+            });
+        }
+        public void WriteOutSimulationSummary(SimulationSummaryEventArgs e)
+        {
+            Console.CursorVisible = false;
+            ClearConsole();
+
+            int titleDisplayPosition = 58;
+            int timeDisplayPosition = 54;
+            int hamsterDisplayPosition = 35;
+
+            Console.SetCursorPosition(titleDisplayPosition, 1);
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Write($"SIMULATION OVERVIEW");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            if (e.ElapsedTicks != 0)
+            {
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition, currentPosition.Top + 1); Console.Write(" ");
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition + 5, currentPosition.Top + 1); Console.Write($"Days simulated {e.ElapsedDays-1}");
+
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.SetCursorPosition(3, currentPosition.Top + 1); Console.Write("(Press Enter to End the simulation)");
+                Console.SetCursorPosition(83, currentPosition.Top + 1); Console.Write("(Press Enter to End the simulation)");
+                Console.ResetColor();
+            }
+            else
+            {
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition, currentPosition.Top + 1); Console.Write(" ");
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition + 5, currentPosition.Top + 1); Console.Write($"Days simulated {e.ElapsedDays}");
+
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.SetCursorPosition(3, currentPosition.Top + 1); Console.Write("(Press Enter to Go Back)");
+                Console.SetCursorPosition(118, currentPosition.Top + 1); Console.Write("(Press Enter to Go Back)");
+                Console.ResetColor();
+            }
+
+            currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + 1);
+            Console.Write(" ");
+            currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + 1);
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            string header = String.Format("{0, -20} {1, -20} {2, -20} {3, -20}", "Name", "Time in Cage",
+                                        "Time in EA", "In Exercise");
+            Console.Write(header);
+            Console.ResetColor();
+
+            currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + 1);
+            Console.Write(" ");
+
+            for (int i = 0; i < e.ActivityLogsPerHamster.Count(); i++)
+            {
+                var iGroupHamster = e.ActivityLogsPerHamster.Where(c => c.Key == i + 1).First();
+
+                var activityLogs = iGroupHamster.Where(c => c.Id > 0).ToList();
+                var hamster = e.Hamsters.Where(c => c.Id == iGroupHamster.Key).First();
+
+                var timeInCage = 0.0;
+                var timeInEA = 0.0;
+
+                var timesInEAint = 0;
+                var timesInEA = iGroupHamster.Where(c => c.ActivityId == 2).ToList();
+                if (timesInEA == null) { timesInEAint = 0; }
+                else { timesInEAint = timesInEA.Count(); }
 
                 for (int j = 0; j < activityLogs.Count(); j++)
                 {
@@ -278,35 +395,11 @@ namespace UI
                     }
                 }
 
-                var firstExercise = iGroupHamster.Where(c => c.ActivityId == 2).First();
-                TimeSpan timeSpan = firstExercise.TimeStamp - arrived.TimeStamp;
-                var departure = iGroupHamster.Where(c => c.ActivityId == 4).First();
-
                 Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + (2 + i));
-                string hamsterString = String.Format("{0, -20} {1, -20} {2, -20} {3, -20} {4, -20} {5, -20} {6, -20}",
-                                $"{hamster.Name}", $"{arrived.TimeStamp.TimeOfDay}", $"{timeInCage}", $"{timeInEA}", $"{timesInEA.Count()} times",
-                                $"{timeSpan.TotalMinutes} minutes", $"{departure.TimeStamp.TimeOfDay}");
+                string hamsterString = String.Format("{0, -20} {1, -20} {2, -20} {3, -20}",
+                                $"{hamster.Name}", $"{timeInCage} minutes", $"{timeInEA} minutes", $"{timesInEAint} times");
                 Console.Write(hamsterString);
             }
-        }
-        #endregion
-
-        #region PrintSimulationSummary
-        public async void PrintSimulationSummary(object sender, SimulationSummaryEventArgs e)
-        {
-            await Task.Run(() =>
-            {
-                Console.Clear();
-                Console.CursorVisible = false;
-
-
-
-
-
-                // HamsterName       Time in Cage      Time in Exercise Area      In Exercise Area
-
-
-            });
         }
         #endregion
     }
