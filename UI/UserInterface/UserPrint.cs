@@ -69,6 +69,8 @@ namespace UI
                         Console.Write(something);
                         count += 2;
 
+                        // kunna skriva ut endast en activityLog 
+
                         rowCount++;
                         if (count > e.ActivityLogs.Count() - 1)
                         {
@@ -197,20 +199,89 @@ namespace UI
         #region PrintDayInfo-methods
         public async void PrintDayInfo(object sender, DayInfoEventArgs e)
         {
-            // Kunna visa:
-            // -Datumet/tiden/ticket/dag
-            // -Vad hamstrarna gjort (sammanfattning)
-            //    - Avlämnade, Burtid, Motionstid, Hämtade
-            // -Hur lång tid fick hamstrarna vänta på motion, dvs tid mellan incheckning och motionstillfälle
-            //    - Tidsskillnaden mellan incheckning och första motionstillfället
-            // -Hur många gånger har hamstrarna hunnit motionera
-            //    - Kolla på ActivityLogs med hamster-id:t, simulations-id:t och activity-id:t
-
             await Task.Run(() =>
             {
-                Console.Clear();
                 Console.CursorVisible = false;
+                ClearConsole();
 
+                int titleDisplayPosition = 58; // 58
+                int timeDisplayPosition = 54;
+                int hamsterDisplayPosition = 5;
+
+                Console.SetCursorPosition(titleDisplayPosition, 1);
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Write($"DAAAAAY OVERVIEW");
+                Console.ForegroundColor = ConsoleColor.White;
+
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition, currentPosition.Top + 1); Console.Write(" ");
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition + 8, currentPosition.Top + 1); Console.Write($"Day: {e.ElapsedDays}");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.SetCursorPosition(3, currentPosition.Top + 1); Console.Write("(Press Enter to Pause/Resume the simulation)");
+                Console.SetCursorPosition(83, currentPosition.Top + 1); Console.Write("(Press Enter to Pause/Resume the simulation)");
+                Console.ResetColor();
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition, currentPosition.Top + 1); Console.Write(" ");
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(titleDisplayPosition, currentPosition.Top + 1); Console.Write($"Date: {e.CurrentSimulationDate.ToShortDateString()}");
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(timeDisplayPosition, currentPosition.Top + 1); Console.Write(" ");
+
+                // -Vad hamstrarna gjort (sammanfattning)
+                //    - Avlämnade, Burtid, Motionstid, Hämtade
+                // -Hur lång tid fick hamstrarna vänta på motion, dvs tid mellan incheckning och motionstillfälle
+                //    - Tidsskillnaden mellan incheckning och första motionstillfället
+                // -Hur många gånger har hamstrarna hunnit motionera
+                //    - Kolla på ActivityLogs med hamster-id:t, simulations-id:t och activity-id:t           
+
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + 1);
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                string header = String.Format("{0, -20} {1, -20} {2, -20} {3, -20} {4, -20} {5, -20} {6, -20}", "Name", "Arrived", "Time in Cage",
+                                            "Time in EA", "In Exercise", "Arrived => EA", "Departure");
+                Console.Write(header);
+                Console.ResetColor();
+
+                currentPosition = Console.GetCursorPosition(); Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + 1);
+                Console.Write(" ");
+
+                // HamsterName      Arrived       Time in Cage      Time in Exercise Area      In Exercise Area      Arri=>Exercise      Departure  
+
+                for (int i = 0; i < e.ActivityLogsPerHamster.Count(); i++)
+                {
+                    var iGroupHamster = e.ActivityLogsPerHamster.Where(c => c.Key == i + 1).First();
+
+                    var activityLogs = iGroupHamster.Where(c => c.Id > 0).ToList();
+                    var hamster = e.Hamsters.Where(c => c.Id == iGroupHamster.Key).First();
+                    var arrived = iGroupHamster.Where(c => c.ActivityId == 1).First();
+
+                    var timeInCage = 0.0;
+                    var timeInEA = 0.0;
+                    TimeSpan timeBetween = new TimeSpan();
+                    //var timesInCage = iGroupHamster.Where(c => c.ActivityId == 3).ToList();
+                    var timesInEA = iGroupHamster.Where(c => c.ActivityId == 2).ToList();
+
+                    for (int j = 0; j < activityLogs.Count(); j++)
+                    {
+                        if (j + 1 != activityLogs.Count())
+                        {
+                            timeBetween = activityLogs[j + 1].TimeStamp - activityLogs[j].TimeStamp;
+                            if (activityLogs[j].ActivityId == 3)
+                            {
+                                timeInCage += timeBetween.TotalMinutes;
+                            }
+                            else if (activityLogs[j].ActivityId == 2)
+                            {
+                                timeInEA += timeBetween.TotalMinutes;
+                            }
+                        }
+                    }
+
+                    var firstExercise = iGroupHamster.Where(c => c.ActivityId == 2).First();
+                    TimeSpan timeSpan = firstExercise.TimeStamp - arrived.TimeStamp;
+                    var departure = iGroupHamster.Where(c => c.ActivityId == 4).First();
+
+                    Console.SetCursorPosition(hamsterDisplayPosition, currentPosition.Top + (2+i));
+                    string hamsterString = String.Format("{0, -20} {1, -20} {2, -20} {3, -20} {4, -20} {5, -20} {6, -20}", 
+                                    $"{hamster.Name}", $"{arrived.TimeStamp.TimeOfDay}", $"{timeInCage}", $"{timeInEA}", $"{timesInEA.Count()} times",
+                                    $"{timeSpan.TotalMinutes} minutes", $"{departure.TimeStamp.TimeOfDay}");
+                    Console.Write(hamsterString);
+                }
 
             });
         }
