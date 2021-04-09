@@ -133,6 +133,7 @@ namespace HamsterParadise.Common
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
                 var hamstersWithNoCage = hamsterDb.Hamsters.ToList();
+                hamstersWithNoCage = hamstersWithNoCage.Shuffle().ToList();
                 var cages = hamsterDb.Cages.Include(h => h.Hamsters).ToList();
 
                 var arrivalActivityId = hamsterDb.Activities.Where(a => a.ActivityName == "Arrived")
@@ -147,9 +148,6 @@ namespace HamsterParadise.Common
 
                 for (int i = 0; i < hamstersWithNoCage.Count(); i++)
                 {
-                    //var addHamsterToCageTask = TryAddToCage(hamstersWithNoCage[i], tempCurrentSimDate, cages);
-                    //var addHamsterToCageTask = Task.Run(() =>
-                    //{
                     hamstersWithNoCage[i].CageId = cages.Where(c => c.CageSize < 3 && c.CageSize > 0
                                                 && c.Hamsters.First().IsFemale == hamstersWithNoCage[i].IsFemale
                                                 || c.CageSize == 0)
@@ -161,8 +159,6 @@ namespace HamsterParadise.Common
                     hamstersWithNoCage[i].CheckedInTime = tempCurrentSimDate;
 
                     hamsterDb.SaveChanges();
-                    //});
-                    //taskList.Add(addHamsterToCageTask);
 
                     var addArrivalActivityLogTask = CreateAddActivityLog(arrivalActivityId, hamstersWithNoCage[i].Id);
                     taskList.Add(addArrivalActivityLogTask);
@@ -249,21 +245,41 @@ namespace HamsterParadise.Common
                 {
                     var exerciseArea = hamsterDb.ExerciseAreas.First();
                     var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Exercise")
-                                .Select(a => a.Id).First(); // Single
+                                .Select(a => a.Id).First();
 
                     var hamstersNotInExerciseArea = hamsterDb.Hamsters.Where(c => c.ExerciseAreaId == null)
                                                         .OrderBy(t => t.LastExerciseTime)
                                                         .ThenBy(t => t.LastExerciseTime.HasValue)
                                                         .Select(c => c).ToList();
 
-                    var hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
+                    List<Hamster> hamstersToAdd = new List<Hamster>();
+
+                    var hamstersNeverExercised = hamstersNotInExerciseArea.Where(t => t.LastExerciseTime.HasValue == false).ToList();
+
+                    var amountNeverExercised = 0;
+                    if (hamstersNeverExercised != null) { amountNeverExercised = hamstersNeverExercised.Count(); }
+                    else { amountNeverExercised = 0; }
+
+                    if (amountNeverExercised == hamsterDb.Hamsters.Count())
+                    {
+                        hamstersNeverExercised = hamstersNeverExercised.Shuffle().ToList();
+                        hamstersToAdd = hamstersNeverExercised.Where(c => c.IsFemale == hamstersNeverExercised.First().IsFemale)
                                                                  .Take(6).ToList();
+                    }
+                    else
+                    {
+                        hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
+                                                                 .Take(6).ToList();
+                    }
+
+                    //var hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
+                    //                                             .Take(6).ToList();
 
                     var taskList = new List<Task>();
 
                     for (int i = 0; i < hamstersToAdd.Count(); i++)
                     {
-                        var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).First(); // Single
+                        var cage = hamsterDb.Cages.Where(c => c.Id == hamstersToAdd[i].CageId).First();
 
                         hamstersToAdd[i].CageId = null;
                         cage.CageSize--;
