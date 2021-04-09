@@ -15,9 +15,17 @@ namespace HamsterParadise.Common
 
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
             {
-                allSimulations = hamsterDb.Simulations.Where(s => s.ActivityLogs.Count() > 0)
-                                                      .OrderByDescending(s => s.Id)
-                                                      .Select(s => s.Name).ToList();
+                if (hamsterDb.Database.CanConnect())
+                {
+                    allSimulations = hamsterDb.Simulations.Where(s => s.ActivityLogs.Count() > 0)
+                                      .OrderByDescending(s => s.Id)
+                                      .Select(s => s.Name).ToList();
+                }
+            }
+
+            if (allSimulations == null)
+            {
+                return new List<string>();
             }
 
             return allSimulations;
