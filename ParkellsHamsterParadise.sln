@@ -9,11 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HamsterParadise.DataAccess"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HamsterParadise.Common", "HamsterParadise.Common\HamsterParadise.Common.csproj", "{A3835F2C-5D88-44A2-AD44-F6CAF7932C00}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InitializeData", "InitializeData", "{1044A286-5498-40B9-B8BC-5AF62C38BC46}"
-	ProjectSection(SolutionItems) = preProject
-		Hamsterlista30.csv = Hamsterlista30.csv
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
