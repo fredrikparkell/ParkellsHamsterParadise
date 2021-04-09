@@ -170,7 +170,7 @@ namespace HamsterParadise.Common
                 await Task.WhenAll(taskList);
                 hamsterDb.SaveChanges();
             }
-        } // eventuellt göra under-metod som lägger till varje hamster asynkront i burarna
+        }
         private async Task PickUpFromCages()
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
@@ -196,7 +196,7 @@ namespace HamsterParadise.Common
                 var taskArray = new Task[] { taskOne, taskTwo };
                 await Task.WhenAll(taskArray);
             }
-        } // typ klar?
+        }
         private async Task MoveToExerciseArea()
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
@@ -299,7 +299,7 @@ namespace HamsterParadise.Common
                     hamsterDb.SaveChanges();
                 }
             }
-        } // eventuellt göra under-metod som lägger till varje hamster asynkront i ExerciseArea
+        }
         private async Task TryRemoveFromExerciseArea(Hamster hamster, int activityId) // async Task void
         {
             await Task.Run(() =>
