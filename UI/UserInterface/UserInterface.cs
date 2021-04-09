@@ -133,7 +133,7 @@ namespace UI
                 switch (selectedIndex)
                 {
                     case 0: case 2:
-                        return 3;
+                        return 2;
                     case 1: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
                         return selectedIndex;
                     case 10:
@@ -157,7 +157,8 @@ namespace UI
                            |_|                                                    
 (Use the arrow keys to cycle through options and press enter to select an option.)";
                 string[] options = new string[] { "  Default (2)  ", "      (1)      ", "      (2)      ",
-                                                "      (3)      ", "      (4)      ", "      (5)      " };
+                                                "      (3)      ", "      (4)      ", "      (5)      ",
+                                                "      (6)      ", "      (7)      " };
 
                 UserMenu ticksPerSecondMenu = new UserMenu(title, options, 10, 25);
                 int selectedIndex = ticksPerSecondMenu.Run();
@@ -166,7 +167,7 @@ namespace UI
                 {
                     case 0: case 2:
                         return 2;
-                    case 1: case 3: case 4: case 5:
+                    case 1: case 3: case 4: case 5: case 6: case 7:
                         return selectedIndex;
                 }
             }

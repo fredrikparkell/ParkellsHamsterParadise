@@ -63,14 +63,22 @@ namespace UI
                     {
                         currentPosition.Left = tempCurrentPosition.Left + 1;
                         Console.SetCursorPosition(currentPosition.Left, currentPosition.Top + (rowCount + 1));
-                        string something = String.Format("{0, -35} {1, -20}", $"{e.ActivityLogs[count].Hamster.Name} " +
-                                                                        $"=> {e.ActivityLogs[count].Activity.ActivityName}",
-                                                                       $"{e.ActivityLogs[count + 1].Hamster.Name}" +
-                                                                       $" => {e.ActivityLogs[count + 1].Activity.ActivityName}");
-                        Console.Write(something);
+                        if (e.ActivityLogs.Count() == 1 || count + 1 == e.ActivityLogs.Count())
+                        {
+                            string something = String.Format("{0, -35} {1, -20}", $"{e.ActivityLogs[count].Hamster.Name} " +
+                                                $"=> {e.ActivityLogs[count].Activity.ActivityName}",
+                                               $"");
+                            Console.Write(something);
+                        }
+                        else
+                        {
+                            string something = String.Format("{0, -35} {1, -20}", $"{e.ActivityLogs[count].Hamster.Name} " +
+                                                $"=> {e.ActivityLogs[count].Activity.ActivityName}",
+                                               $"{e.ActivityLogs[count + 1].Hamster.Name}" +
+                                               $" => {e.ActivityLogs[count + 1].Activity.ActivityName}");
+                            Console.Write(something);
+                        }
                         count += 2;
-
-                        // kunna skriva ut endast en activityLog 
 
                         rowCount++;
                         if (count > e.ActivityLogs.Count() - 1)
@@ -404,7 +412,7 @@ namespace UI
                 {
                     if (timeInCage + timeInEA != 600 * e.ElapsedDays-1)
                     {
-                        double calculation = 600 * e.ElapsedDays - 1;
+                        double calculation = 600 * (e.ElapsedDays-1);
                         calculation -= (timeInCage + timeInEA);
                         timeInCage += calculation;
                     }
