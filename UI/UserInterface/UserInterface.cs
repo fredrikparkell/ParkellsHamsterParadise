@@ -12,7 +12,7 @@ namespace UI
     {
         private static Random random = new Random();
         private bool isTimerStopped;
-        private int totalDaysToSim = 3; // default-värden 3
+        private int totalDaysToSim = 2; // default-värden 2
         private int ticksPerSecond = 2; // default-värden 2
         private static UserPrint userPrint = new UserPrint();
         private static SimulationInfo simulationInfo = new SimulationInfo();
@@ -123,7 +123,7 @@ namespace UI
                 __/ |                                                           
                |___/                                                            
 (Use the arrow keys to cycle through options and press enter to select an option.)";
-                string[] options = new string[] { "  Default (3)  ", "      (1)      ", "      (2)      ",
+                string[] options = new string[] { "  Default (2)  ", "      (1)      ", "      (2)      ",
                                                 "      (3)      ", "      (4)      ", "      (5)      ", "      (6)      ",
                                                 "      (7)      ", "      (8)      ", "      (9)      ", "Random (10->30)" };
 
@@ -132,9 +132,9 @@ namespace UI
 
                 switch (selectedIndex)
                 {
-                    case 0: case 3:
+                    case 0: case 2:
                         return 3;
-                    case 1: case 2: case 4: case 5: case 6: case 7: case 8: case 9:
+                    case 1: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
                         return selectedIndex;
                     case 10:
                         return random.Next(10, 31);
@@ -186,7 +186,8 @@ namespace UI
                                                                                               
                                                                                               
 (Use the arrow keys to cycle through options and press enter to select an option.)";
-                List<string> allSimulations = simulationInfo.GetAllSimulations();
+                List<string> allSimulations = new List<string>();
+                allSimulations = simulationInfo.GetAllSimulations();
                 allSimulations.Insert(0, "[Go back to previous menu]");
                 string[] options = allSimulations.ToArray();
                 Console.Clear();
