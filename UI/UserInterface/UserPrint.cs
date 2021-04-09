@@ -295,6 +295,11 @@ namespace UI
                     timeSpanString = timeBetween.TotalMinutes.ToString();
                 }
 
+                if (timeInCage + timeInEA != 600)
+                {
+                    timeInCage += timeBetween.TotalMinutes;
+                }
+
                 var departureString = "";
                 var departure = iGroupHamster.Where(c => c.ActivityId == 4).FirstOrDefault();
                 if (departure == null) { departureString = ""; }
@@ -392,6 +397,25 @@ namespace UI
                         {
                             timeInEA += timeBetween.TotalMinutes;
                         }
+                    }
+                }
+
+                if (e.ElapsedTicks != 0)
+                {
+                    if (timeInCage + timeInEA != 600 * e.ElapsedDays-1)
+                    {
+                        double calculation = 600 * e.ElapsedDays - 1;
+                        calculation -= (timeInCage + timeInEA);
+                        timeInCage += calculation;
+                    }
+                }
+                else
+                {
+                    if (timeInCage + timeInEA != 600 * e.ElapsedDays)
+                    {
+                        double calculation = 600 * e.ElapsedDays;
+                        calculation -= (timeInCage + timeInEA);
+                        timeInCage += calculation;
                     }
                 }
 
