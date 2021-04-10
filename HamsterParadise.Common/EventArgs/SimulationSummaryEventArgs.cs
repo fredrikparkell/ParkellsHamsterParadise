@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
 {
+    /// <summary>
+    /// Custom EventArgs sending out information that is used for creating 
+    /// and printing/writing reports. In my UI this goes to the UserPrint-class
+    /// where its written out in the console window. This EventArgs is used for a
+    /// Summary (all information) of the specific Simulation.
+    /// </summary>
     public class SimulationSummaryEventArgs
     {
         public int ElapsedTicks { get; }

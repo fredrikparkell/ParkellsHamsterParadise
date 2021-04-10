@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
 {
+    /// <summary>
+    /// Custom EventArgs sending out information that is used for creating 
+    /// and printing/writing reports. In my UI this goes to the UserPrint-class
+    /// where its written out in the console window. This EventArgs is used for the current Tick reports.
+    /// </summary>
     public class TickInfoEventArgs
     {
         public int ElapsedTicks { get; }
