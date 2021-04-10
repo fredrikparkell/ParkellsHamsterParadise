@@ -10,14 +10,17 @@ namespace UI
 {
     public class UserInterface
     {
+        #region Fields
         private static Random random = new Random();
         private bool isTimerStopped;
-        private int totalDaysToSim = 2; // default-värden 2
-        private int ticksPerSecond = 2; // default-värden 2
+        private int currentSimulationInfoId;
+        private int totalDaysToSim = 2; // default-värden = 2
+        private int ticksPerSecond = 2; // default-värden = 2
         private static UserPrint userPrint = new UserPrint();
         private static SimulationInfo simulationInfo = new SimulationInfo();
-        private int currentSimulationInfoId;
+        #endregion
 
+        #region Startup menu-methods
         public void RunMainUI()
         {
             MainMenu();
@@ -72,7 +75,9 @@ namespace UI
                 }
             }
         }
+        #endregion
 
+        #region Simulation control-methods
         private void StartSimulation()
         {
             CareHouseSimulation careHouseSimulation = new CareHouseSimulation(ticksPerSecond, totalDaysToSim);
@@ -89,25 +94,6 @@ namespace UI
             careHouseSimulation.SendSimulationSummary -= userPrint.PrintSimulationSummary;
             careHouseSimulation.SendSimulationSummary -= StopControlOfTimer;
         }
-        private void ControlTimer(CareHouseSimulation careHouseSimulation)
-        {
-            isTimerStopped = false;
-            ConsoleKeyInfo keyInfo;
-
-            do
-            {
-                keyInfo = Console.ReadKey();
-                if (keyInfo.Key == ConsoleKey.Enter)
-                {
-                    careHouseSimulation.ManipulateTimer();
-                }
-            } while (isTimerStopped != true);
-        }
-        public async void StopControlOfTimer(object sender, SimulationSummaryEventArgs e)
-        {
-            await Task.Run(() => { isTimerStopped = true; });
-        }
-
         private int DaysToSim()
         {
             while (true)
@@ -147,7 +133,7 @@ namespace UI
             {
                 Console.Clear();
                 Console.SetCursorPosition(1, 22); Console.ForegroundColor = ConsoleColor.DarkRed; Console.Write("NOTE: 5, 6 & 7 ticks per second has been tested a total of 50+ times (15-20+ times each) with a range of 2-8 days runtime.");
-                Console.SetCursorPosition(1, 23); Console.Write("In only one, a 7 tick per second (142 ms/tick) 8 day simulation, did it crash mid-simulation. This due to a update going a little too slow."); 
+                Console.SetCursorPosition(1, 23); Console.Write("In only one, a 7 tick per second (142 ms/tick) 8 day simulation, did it crash mid-simulation. This due to a update going a little too slow.");
                 Console.SetCursorPosition(1, 24); Console.Write("It ran fine on 7 tick simulations directly after that aswell. Thus, there should not be any issues running the simulation on up to 7 ticks per second."); Console.ResetColor();
 
                 string title = @"
@@ -176,7 +162,27 @@ namespace UI
                 }
             }
         }
+        private void ControlTimer(CareHouseSimulation careHouseSimulation)
+        {
+            isTimerStopped = false;
+            ConsoleKeyInfo keyInfo;
 
+            do
+            {
+                keyInfo = Console.ReadKey();
+                if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    careHouseSimulation.ManipulateTimer();
+                }
+            } while (isTimerStopped != true);
+        }
+        public async void StopControlOfTimer(object sender, SimulationSummaryEventArgs e)
+        {
+            await Task.Run(() => { isTimerStopped = true; });
+        }
+        #endregion
+
+        #region Simulation display-methods
         private void SimulationMenu()
         {
             while (true)
@@ -263,5 +269,6 @@ namespace UI
 
             Console.ReadKey();
         }
+        #endregion
     }
 }
