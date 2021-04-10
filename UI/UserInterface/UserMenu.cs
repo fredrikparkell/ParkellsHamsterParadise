@@ -6,15 +6,22 @@ using System.Threading.Tasks;
 
 namespace UI
 {
+    /// <summary>
+    /// Dynamic menu-builder-class that is used to remove the need for
+    /// manually written user-inputs that could lead to exceptions.
+    /// </summary>
     public class UserMenu
     {
+        #region Fields
         private int selectedIndex;
         private string[] options;
         private string title;
 
         private int titleCursorLeft;
         private int optionsCursorLeft;
+        #endregion
 
+        #region Constructor
         public UserMenu(string headTitle, string[] menuOptions, int _titleCursorLeft, int _optionsCursorLeft)
         {
             title = headTitle;
@@ -24,6 +31,9 @@ namespace UI
             titleCursorLeft = _titleCursorLeft;
             optionsCursorLeft = _optionsCursorLeft;
         }
+        #endregion
+
+        #region Create and display menu-methods
         public int Run()
         {
             ConsoleKey keyPressed;
@@ -88,5 +98,6 @@ namespace UI
             }
             Console.ResetColor();
         }
+        #endregion
     }
 }

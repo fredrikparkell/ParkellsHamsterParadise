@@ -8,10 +8,20 @@ using System.Threading.Tasks;
 
 namespace UI
 {
+    /// <summary>
+    /// Used for printing/writing out reports of information.
+    /// 
+    /// Not the best looking or optimized code but it works as intended.
+    /// WriteOutDayInfo and WriteOutSimulationSummary-methods are used
+    /// for both printing/writing out information during the simulation
+    /// and for when you want to look at a specific simulation.
+    /// </summary>
     public class UserPrint
     {
+        #region Fields
         private (int Left, int Top) currentPosition;
         private static TimeSpan timeBetween = new TimeSpan();
+        #endregion
 
         #region PrintTickInfo-methods
         public async void PrintTickInfo(object sender, TickInfoEventArgs e)
