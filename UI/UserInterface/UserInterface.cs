@@ -60,8 +60,8 @@ namespace UI
                         StartSimulation();
                         break;
                     case 1:
-                        totalDaysToSim = DaysToSim();
-                        ticksPerSecond = TicksPerSecond();
+                        totalDaysToSim = ChooseDaysToSimulate();
+                        ticksPerSecond = ChooseTicksPerSecond();
                         break;
                     case 2:
                         Console.WriteLine("\n\nLoading..");
@@ -94,7 +94,7 @@ namespace UI
             careHouseSimulation.SendSimulationSummary -= userPrint.PrintSimulationSummary;
             careHouseSimulation.SendSimulationSummary -= StopControlOfTimer;
         }
-        private int DaysToSim()
+        private int ChooseDaysToSimulate()
         {
             while (true)
             {
@@ -127,7 +127,7 @@ namespace UI
                 }
             }
         }
-        private int TicksPerSecond()
+        private int ChooseTicksPerSecond()
         {
             while (true)
             {
