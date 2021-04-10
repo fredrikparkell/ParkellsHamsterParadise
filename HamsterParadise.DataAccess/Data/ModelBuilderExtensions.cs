@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.DataAccess
 {
+    /// <summary>
+    /// A number of custom-made ModelBuilder extensions for 
+    /// configuring the database and doing database-seeding.
+    /// </summary>
     public static class ModelBuilderExtensions
     {
         public static void DatabaseSeed(this ModelBuilder modelBuilder)
