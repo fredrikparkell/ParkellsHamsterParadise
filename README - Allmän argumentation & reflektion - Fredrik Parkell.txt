@@ -3,7 +3,7 @@ Fredrik Parkell - SUT20 - 2021-04-10
 Under projektets gång har jag arbetat med, använt mig av och inkluderat bland annat:
 
 -Visual Studio
--Git, GitHub & Git Fork (GitBash-interface)
+-Git, GitHub & Git Fork (GitBash-interface, med 50+ commits)
 -MSSMS (SQL Server, främst för att titta på data)
 -LINQPad (för lite test)
 -LucidChart (för att utforma ett UML)
