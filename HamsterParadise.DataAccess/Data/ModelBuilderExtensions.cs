@@ -13,6 +13,11 @@ namespace HamsterParadise.DataAccess
     /// </summary>
     public static class ModelBuilderExtensions
     {
+        /// <summary>
+        /// Calls the different ModelBuilder-extension-methods to add the
+        /// initial data that comes with the database every time it is created
+        /// </summary>
+        /// <param name="modelBuilder"></param>
         public static void DatabaseSeed(this ModelBuilder modelBuilder)
         {
             modelBuilder.ActivityCreate();
