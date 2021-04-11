@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
 {
+    /// <summary>
+    /// Includes methods that are using LINQ to query out information to send out to 
+    /// the frontend where you can create reports
+    /// </summary>
     public class SimulationInfo
     {
         public List<string> GetAllSimulations()

@@ -7,18 +7,26 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
 {
+    /// <summary>
+    /// Custom-made ticker-class that keeps the simulation running by
+    /// running the SendOutTicks-method every time the Timer's TimerCallback is
+    /// called (based on the tickspeed that the user chooses).
+    /// </summary>
     internal class TimeTicker
     {
+        #region Events
         public event EventHandler<TimerEventArgs> SendOutTick;
+        #endregion
 
+        #region Fields & Propertys
         private int tickCounter;
         private int tickDayCounter;
         private int tickSpeed;
-
         private bool isRunning;
         private DateTime currentSimulationDate;
         private Timer tickTimer;
         internal Timer TickTimer { get => tickTimer; set => tickTimer = value; }
+        #endregion
 
         public TimeTicker(int ticktickSpeed)
         {
@@ -45,6 +53,7 @@ namespace HamsterParadise.Common
             SendOutTick?.Invoke(this, new TimerEventArgs(tickCounter, currentSimulationDate, tickDayCounter));
         }
 
+        #region Timer-methods
         internal void StartTimer()
         {
             isRunning = true;
@@ -70,5 +79,6 @@ namespace HamsterParadise.Common
                 TickTimer.Change(Timeout.Infinite, Timeout.Infinite);
             });
         }
+        #endregion
     }
 }

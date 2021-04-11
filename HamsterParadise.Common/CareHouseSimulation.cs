@@ -10,21 +10,26 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
 {
-    // eventuellt lägga till ett till projekt/assembly för API eller annan kommunikation utåt, dvs inte UI
+    /// <summary>
+    /// A new instance of this class creates, starts and runs the simulation.
+    /// </summary>
     public class CareHouseSimulation
     {
+        #region Events
         public event EventHandler<TickInfoEventArgs> SendTickInfo;
         public event EventHandler<DayInfoEventArgs> SendDayInfo;
         public event EventHandler<SimulationSummaryEventArgs> SendSimulationSummary;
+        #endregion
 
+        #region Fields
         private int elapsedTicks;
         private int elapsedDays;
-        private int tickTotalRunTime; // om 3 dagar, typ 3*100 = 300 ticks varpå varje 100 ticks
-                                      // sover den i några sekunder för att simulera tiden mellan
-                                      // 17:00 -> 07:00 samt ger tid för att läsa sammanfattningen på skärmen
+        private int tickTotalRunTime;
         private int currentSimulationId;
         private DateTime currentSimulationDate;
         private TimeTicker timeTicker;
+        #endregion
+
         public void ManipulateTimer()
         {
             timeTicker.ManipulateTimer();
@@ -38,7 +43,7 @@ namespace HamsterParadise.Common
 
             elapsedTicks = 0;
             elapsedDays = 0;
-            tickTotalRunTime = daysToRun * 100; // tex 3 * 100 = 300 ticks totalt
+            tickTotalRunTime = daysToRun * 100;
 
             timeTicker = new TimeTicker(1000/tickSpeed); // sets time of the ticker to 1000 ms (1 second)
                                                          // divided by ex. 3 (ticks per second) = 333 ms
@@ -203,7 +208,7 @@ namespace HamsterParadise.Common
             {
                 var exerciseArea = hamsterDb.ExerciseAreas.First();
                 var activityId = hamsterDb.Activities.Where(a => a.ActivityName == "Cage")
-                                .Select(a => a.Id).First(); // Single
+                                .Select(a => a.Id).First();
 
                 if (exerciseArea.CageSize != 0)
                 {
@@ -272,9 +277,6 @@ namespace HamsterParadise.Common
                                                                  .Take(6).ToList();
                     }
 
-                    //var hamstersToAdd = hamstersNotInExerciseArea.Where(c => c.IsFemale == hamstersNotInExerciseArea.First().IsFemale)
-                    //                                             .Take(6).ToList();
-
                     var taskList = new List<Task>();
 
                     for (int i = 0; i < hamstersToAdd.Count(); i++)
@@ -300,7 +302,7 @@ namespace HamsterParadise.Common
                 }
             }
         }
-        private async Task TryRemoveFromExerciseArea(Hamster hamster, int activityId) // async Task void
+        private async Task TryRemoveFromExerciseArea(Hamster hamster, int activityId)
         {
             await Task.Run(() =>
             {
@@ -308,7 +310,7 @@ namespace HamsterParadise.Common
                 {
                     var theExerciseArea = hamsterDb.ExerciseAreas.First();
 
-                    var theHamster = hamsterDb.Hamsters.Where(h => h.Id == hamster.Id).First(); // Single
+                    var theHamster = hamsterDb.Hamsters.Where(h => h.Id == hamster.Id).First();
 
                     hamster.ExerciseAreaId = null;
                     theExerciseArea.CageSize--;
@@ -320,7 +322,7 @@ namespace HamsterParadise.Common
                                             || c.CageSize == 0)
                                             .Select(c => c.Id).First();
 
-                    var cage = hamsterDb.Cages.Where(c => c.Id == theHamster.CageId).First(); // Single
+                    var cage = hamsterDb.Cages.Where(c => c.Id == theHamster.CageId).First();
 
                     cage.CageSize++;
 
@@ -345,7 +347,7 @@ namespace HamsterParadise.Common
                     hamsterDb.SaveChanges();
                 }
             });
-        } // typ klar? göra till stored procedure ist?
+        }
         private async Task CreateAddActivityLog(int activityId, int hamsterId)
         {
             await Task.Run(() =>
@@ -357,7 +359,7 @@ namespace HamsterParadise.Common
                     hamsterDb.SaveChanges();
                 }
             });
-        } // typ klar? göra till stored procedure ist?
+        }
         #endregion
 
         #region Reset or Nullify for new simulation
@@ -380,7 +382,7 @@ namespace HamsterParadise.Common
                     hamsterDb.SaveChanges();
                 }
             });
-        } // this method is for when for example the simulation was ended prematurely
+        } // calling stored procedure
         private async Task NullCageSize<T>(T cageType)
         {
             await Task.Run(() =>
@@ -398,7 +400,7 @@ namespace HamsterParadise.Common
                     hamsterDb.SaveChanges();
                 }
             });
-        } // this method is for when for example the simulation was ended prematurely
+        } // calling stored procedure
         #endregion
 
         #region Check if database is created
