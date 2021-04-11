@@ -30,16 +30,12 @@ namespace HamsterParadise.Common
         private TimeTicker timeTicker;
         #endregion
 
-        public void ManipulateTimer()
-        {
-            timeTicker.ManipulateTimer();
-        }
-
+        #region Constructor
         public CareHouseSimulation(int tickSpeed, int daysToRun) 
         {
             currentSimulationDate = new DateTime(2021, 4, 01, 7, 0, 0);
 
-            Initialize();
+            InitializeSimulation();
 
             elapsedTicks = 0;
             elapsedDays = 0;
@@ -51,7 +47,10 @@ namespace HamsterParadise.Common
             timeTicker.SendOutTick += MethodListeningToTimerEvent;
             timeTicker.StartTimer();
         }
-        private async void Initialize()
+        #endregion
+
+        #region Methods I didnt know where to put in what "region"
+        private async void InitializeSimulation()
         {
             CheckIsDatabaseCreated();
 
@@ -61,6 +60,10 @@ namespace HamsterParadise.Common
 
             await Task.WhenAll(taskArray);
             await ArrivalOfHamsters();
+        }
+        public void ManipulateTimer()
+        {
+            timeTicker.ManipulateTimer();
         }
         internal async void MethodListeningToTimerEvent(object sender, TimerEventArgs e)
         {
@@ -72,22 +75,23 @@ namespace HamsterParadise.Common
             {
                 OnSendSimulationSummary();
             }
-            else if (currentSimulationDate.Hour == 7 && currentSimulationDate.Minute == 0) // påbörja dagen, ankomst av hamstrarna
+            else if (currentSimulationDate.Hour == 7 && currentSimulationDate.Minute == 0) // påbörja dagen, ankomst av hamstrarna, skicka ut sammanställning av ticket via event
             {
                 await ArrivalOfHamsters();
                 OnSendTickInfo();
             }
-            else if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0) // avsluta dagen, avhämtning för hamstrarna
+            else if (currentSimulationDate.Hour == 17 && currentSimulationDate.Minute == 0) // avsluta dagen, avhämtning för hamstrarna, skicka ut sammanställning av dagen via event
             {
                 await PickUpFromCages();
                 OnSendDayInfo();
             }
             else
             {
-                await MoveToExerciseArea(); // kolla olika saker, do stuff, every 6th minute-check. flytta till och från motion osv
+                await MoveToExerciseArea(); // kolla olika saker, do stuff, every 6th minute-check. flytta till och från motion osv. skicka ut sammanställning av ticket via event
                 OnSendTickInfo();
             }
         }
+        #endregion
 
         #region Event-Triggers
         private void OnSendTickInfo()

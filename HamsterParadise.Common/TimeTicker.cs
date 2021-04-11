@@ -28,6 +28,7 @@ namespace HamsterParadise.Common
         internal Timer TickTimer { get => tickTimer; set => tickTimer = value; }
         #endregion
 
+        #region Constructor
         public TimeTicker(int ticktickSpeed)
         {
             tickSpeed = ticktickSpeed;
@@ -35,7 +36,9 @@ namespace HamsterParadise.Common
             tickDayCounter = 1;
             currentSimulationDate = new DateTime(2021, 4, 01, 7, 0, 0);
         }
+        #endregion
 
+        #region Timer-methods
         private void SendOutTicks(object state)
         {
             tickCounter++;
@@ -52,8 +55,6 @@ namespace HamsterParadise.Common
 
             SendOutTick?.Invoke(this, new TimerEventArgs(tickCounter, currentSimulationDate, tickDayCounter));
         }
-
-        #region Timer-methods
         internal void StartTimer()
         {
             isRunning = true;
