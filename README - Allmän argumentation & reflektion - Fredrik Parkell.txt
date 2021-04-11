@@ -15,6 +15,8 @@ Under projektets gång har jag arbetat med, använt mig av och inkluderat bland 
 	-Migrations
 	-OnModelCreating/modelbuilder för att bland annat hantera vissa 		constraints (har bland annat check constraints på CageSize i 				både Cage- och ExerciseArea)) men också relationer
 	-Database Seeding
+-Använt mig av NugetPackages som behövs för Entity Framework Core
+
 -Egna/Custom Extension-methods (LinqExtensions.cs & ModelBuilderExtensions.cs)
 -Generics
 -Events (fyra stycken)
