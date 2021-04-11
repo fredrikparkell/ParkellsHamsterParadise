@@ -136,9 +136,11 @@ namespace UI
             while (true)
             {
                 Console.Clear();
-                Console.SetCursorPosition(1, 22); Console.ForegroundColor = ConsoleColor.DarkRed; Console.Write("NOTE: 5, 6 & 7 ticks per second has been tested a total of 50+ times (15-20+ times each) with a range of 2-8 days runtime.");
-                Console.SetCursorPosition(1, 23); Console.Write("In only one, a 7 tick per second (142 ms/tick) 8 day simulation, did it crash mid-simulation. This due to a update going a little too slow.");
-                Console.SetCursorPosition(1, 24); Console.Write("It ran fine on 7 tick simulations directly after that aswell. Thus, there should not be any issues running the simulation on up to 7 ticks per second."); Console.ResetColor();
+                Console.SetCursorPosition(1, 22); Console.ForegroundColor = ConsoleColor.DarkRed; Console.Write("NOTE: 5 (20+ times), 6 (30+ times) & 7 (40+ times) ticks per second has been tested a total of almost 100 times with");
+                Console.SetCursorPosition(1, 23); Console.Write("a range of 2-8 days runtime on both my laptop and desktop. In 4 of them, all being 7 ticks per second (142 ms/tick),");
+                Console.SetCursorPosition(1, 24); Console.Write("did it crash mid-simulation. This due to the timer going to fast and a update going a little too slow.");
+                Console.SetCursorPosition(1, 25); Console.Write("It ran fine on 7 tick simulations directly after those failed runs aswell. Thus, there should not be any");
+                Console.SetCursorPosition(1, 26); Console.Write("issues running the simulation on up to 7 ticks per second but there is a small change a hiccup can occur."); Console.ResetColor();
 
                 string title = @"
   _______ _      _                                                         _ ___  
