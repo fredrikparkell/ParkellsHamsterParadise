@@ -136,7 +136,7 @@ namespace HamsterParadise.Common
         }
         #endregion
 
-        #region Hamster Movement-functionality
+        #region Hamster Movement-functionality with alot of LINQ
         private async Task ArrivalOfHamsters()
         {
             using (HamsterDbContext hamsterDb = new HamsterDbContext())
