@@ -6,9 +6,17 @@ using System.Threading.Tasks;
 
 namespace HamsterParadise.Common
 {
+    /// <summary>
+    /// Self-made custom Linq-extension-class that contains a method "Shuffle"
+    /// which shuffles a collection and returns a IEnumerable<T> with shuffled values
+    /// </summary>
     public static class LinqExtensions
     {
+        #region Static Property
         private static Random random = new Random();
+        #endregion
+
+        #region Extension-Method
         /// <summary>
         /// A custom-made Linq extension made for shuffling/randomize the
         /// collection. In this project it is used to make sure that the
@@ -38,5 +46,6 @@ namespace HamsterParadise.Common
 
             return (IEnumerable<T>)newData;
         }
+        #endregion
     }
 }

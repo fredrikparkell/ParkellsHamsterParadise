@@ -4,6 +4,10 @@ using System.Text;
 
 namespace HamsterParadise.DataAccess.Migrations
 {
+    /// <summary>
+    /// This migration contains a MigrationBuilder that adds 
+    /// a (in this case two) stored procedure to the database
+    /// </summary>
     public partial class CreateSPForUpdatingCageSize : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

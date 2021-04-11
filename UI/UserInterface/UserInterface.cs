@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace UI
 {
+    /// <summary>
+    /// A instance of the UserInterface-class starts up 
+    /// the userexperience with the menu options.
+    /// </summary>
     public class UserInterface
     {
         #region Fields

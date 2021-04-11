@@ -4,6 +4,10 @@ using System.Text;
 
 namespace HamsterParadise.DataAccess.Migrations
 {
+    /// <summary>
+    /// This migration contains a MigrationBuilder that adds 
+    /// a stored procedure to the database
+    /// </summary>
     public partial class CreateSPForNullSomeHamsterValues : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
